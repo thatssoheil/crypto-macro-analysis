@@ -1,0 +1,6 @@
+MetaTrader5>=5.0.45
+pandas>=2.0.0
+numpy>=1.26.0
+backtesting>=0.3.3
+scipy>=1.11.0
+pytz>=2024.1
