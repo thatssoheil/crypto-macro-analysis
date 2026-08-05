@@ -1,4 +1,0 @@
-1. N-Day Breakout (Donchian Channel)
-2. Swing Breakout
-3. Parabolic Time/Price System (SAR)
-4. Williams %R Method
