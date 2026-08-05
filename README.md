@@ -72,6 +72,9 @@ pushes, or schedules anything. Runs on any system with a venv.
 Every file: `timestamp,value` (or OHLCV for price charts), one row per day,
 source + span + row-count recorded in `manifest.json`.
 
+> **Every data source, endpoint, and known gap is documented in
+> [`SOURCES.md`](SOURCES.md).** Read it before adding a new chart.
+
 ## The regime engine (strategies/macro_regime_v3.py)
 
 14 weighted signals, each voting risk-on (+1) / risk-off (-1) / neutral (0):
