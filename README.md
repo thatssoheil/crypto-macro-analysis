@@ -3,6 +3,10 @@
 Long-term investment research: macro-economics analysis + crypto (BTC) with **phase-based
 cashing** — hold in risk-on regimes, move to cash on regime shift, rebuy on the next leg up.
 
+> **For agents/AI:** read [`AGENTS.md`](AGENTS.md) first - it has the golden rules,
+> engine math, backtest conventions, and data pitfalls (operational contract).
+> README.md is the user-facing overview.
+
 **The core validated edge:** a 200-day moving-average trend filter on BTC beat buy-and-hold
 on real daily data 2017-2026 by **+9,510% vs +641%**, with **-55% vs -77%** max drawdown.
 A 50d-MA-or-DD-20% breaker caps the worst experienced drawdown at **~-20%**.
