@@ -1,69 +1,100 @@
-# Macro Regime Investing (formerly forex-bot)
+# Macro Regime Investing
 
-Long-term investment research: macro-economics analysis + crypto (BTC) with phase-based
-cashing (hold gems in risk-on, liquidate to cash on regime shift, rebuy the next leg).
+Long-term investment research: macro-economics analysis + crypto (BTC) with **phase-based
+cashing** — hold in risk-on regimes, move to cash on regime shift, rebuy on the next leg up.
 
-> Old forex/MT5 trading path retired (2026-08). Its data is preserved under
-> `data/forex_archive/` and its strategies under `strategies/` (not removed, not used).
+**The core validated edge:** a 200-day moving-average trend filter on BTC beat buy-and-hold
+on real daily data 2017-2026 by **+9,510% vs +641%**, with **-55% vs -77%** max drawdown.
+A 50d-MA-or-DD-20% breaker caps the worst experienced drawdown at **~-20%**.
 
-## Stack
-- Python 3.11+ (venv at `.venv`)
-- pandas / numpy — analysis
-- requests — API fetching
+## What this repo gives you
 
-## Structure
-```
-macro-invest/                      (was forex-bot)
-  strategies/macro_regime_v3.py    # multi-signal regime engine (primary)
-  strategies/macro_regime.py       # v1 (F&G only, deprecated)
-  strategies/macro_backtest_v2.py  # backtest: 200d-MA trend filter (+9,510% vs +641%)
-  strategies/build_macro_dataset.py# fetch all 26 keyless charts
-  data/macro_dataset/              # 26 charts, 71MB (see manifest.json)
-  data/forex_archive/              # retired forex data, preserved (48MB)
-  data/macro/                      # regime reports (latest.md, json)
-```
+- **A complete, locally-stored macro + crypto dataset** (41 charts, CSV, one file per series)
+  covering money supply, rates, inflation, dollar, risk appetite, on-chain, and sentiment.
+- **A regime engine** that scores the current macro environment into a
+  **HOLD / CASH / BUY-the-dip** phase, using 14 weighted signals across 4 causal groups.
+- **Backtest + audit scripts** proving (and checking) every claim with real data.
 
-## Setup
+## Quickstart
 
 ```bash
-# 1. Secrets (never committed)
-cp .env.example .env    # then fill in your keys
+git clone https://github.com/thatssoheil/macro-invest
+cd macro-invest
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 
-# 2. Build/refresh the dataset (keyless sources; FRED runs when FRED_API_KEY set)
+cp .env.example .env    # optional: add your FRED_API_KEY (free at fred.stlouisfed.org)
+
+# 1. Refresh the dataset (keyless sources; FRED runs when key set)
 python strategies/build_macro_dataset.py
 
-# 3. Run the regime engine (no fetch, uses local data)
+# 2. Read the current regime verdict (no network needed - uses local data)
 python strategies/macro_regime_v3.py
+
+# 3. Audit data integrity + signal correctness
+python strategies/audit_dataset.py
 ```
+
+## The dataset (data/macro_dataset/, 41 charts)
+
+| Group | Series | Source | Span |
+|-------|--------|--------|------|
+| **Crypto price** | BTCUSD daily + hourly, ETHUSD daily | Bitstamp | 2011+ |
+| **On-chain** | hash-rate, difficulty, active addresses, transactions, market-cap, total supply | blockchain.info | 2009+ |
+| **Sentiment** | Fear & Greed index | alternative.me | 2018+ |
+| **Crypto liquidity** | stablecoin total supply (USDT/USDC/DAI) | DefiLlama | 2017+ |
+| **Dollar/FX** | DXY, EURUSD, USDJPY, USDCNY | Yahoo / ECB | 1999+ |
+| **Rates & curve** | 3m, 2y, 10y, 30y yields, 10y real yield, breakeven | Yahoo / FRED | 1962+ |
+| **Money & Fed** | M2 money supply, Fed balance sheet, effective fed funds | FRED | 1954+ |
+| **Inflation** | CPI, PCE | FRED | 1947+ |
+| **Labor** | unemployment, jobless claims, nonfarm payrolls | FRED | 1939+ |
+| **Risk appetite** | VIX, S&P 500, Nasdaq, Russell 2000, HY/IG credit spreads | Yahoo / FRED | 2011+ |
+| **Commodities** | gold, silver, WTI crude, copper | Yahoo | 2011+ |
+
+Every file: `timestamp,value` (or OHLCV for price charts), one row per day,
+source + span + row-count recorded in `manifest.json`.
+
+## The regime engine (strategies/macro_regime_v3.py)
+
+14 weighted signals, each voting risk-on (+1) / risk-off (-1) / neutral (0):
+
+| Signal | Weight | Signal | Weight |
+|--------|--------|--------|--------|
+| BTC vs 200d MA | 2.0 | DXY trend | 1.5 |
+| M2 YoY growth | 2.0 | VIX regime | 1.5 |
+| Yield curve 10y-3m | 2.0 | SPX vs 200d MA | 1.5 |
+| Stablecoin 30d flow | 2.0 | HY credit spread | 1.5 |
+| Fed balance sheet | 1.5 | Fear & Greed | 1.0 |
+| 10y real yield | 1.0 | CPI YoY | 0.5 |
+| Hash rate trend | 0.5 | Gold trend | 0.5 |
+
+Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
+**Phase 2 CASH** (≤-0.5). Output written to `data/macro/latest.md` + JSON.
+
+## Validation (all reproducible with the scripts)
+
+| Test | Result |
+|------|--------|
+| 200d-MA trend filter vs buy-hold (2017-26) | **+9,510% vs +641%**, DD -55% vs -77% |
+| 50d OR DD-20% breaker (2017-26) | **worst DD -19.8%** (vs -83.4% buy-hold) |
+| Fear & Greed A/B (with vs without) | no return benefit, slight DD benefit → kept at 5.3% weight |
+| Lead time before tops | M2 YoY peak + DXY reclaim warn **8-11 months before** 2017 & 2021 tops |
+| Data integrity audit | 41/41 charts clean (gaps/dups/nulls/negatives checked) |
+
+> Window note: 2017-2026 is the analysis window — every fetched series has data there
+> (F&G starts 2018-05, stablecoins 2017, HY spreads 2023). Earlier BTC (2011-2016) is
+> too volatile for reliable drawdown protection tests.
 
 ## Secrets
 
-API keys live in `.env` (gitignored). `.env.example` shows the required names.
-Never commit real keys.
-
-## Dataset (data/macro_dataset/, 26 charts)
-- BTCUSD daily + hourly (Bitstamp, 2011+), ETH daily
-- On-chain (blockchain.info, 2009+): hash-rate, difficulty, addresses, txns, market-cap, supply
-- Sentiment: Fear & Greed (2018+); stablecoin total liquidity (2017+)
-- Macro: DXY, US 3m/10y/30y yields, VIX, SPX, Nasdaq, Russell, Gold, Silver, WTI, Copper (Yahoo, 15yr)
-- FX: EURUSD/USDJPY/USDCNY (ECB official, 1999+)
-- FRED (17 series, when key provided): M2, Fed balance sheet, rates, CPI, PCE, labor, ISM, credit spreads
-
-## Regime engine (v3)
-9 weighted signals in 4 causal groups: liquidity (curve, stablecoins, DXY), risk
-appetite (VIX, SPX), crypto-internal (BTC vs 200d MA, F&G, hash), inflation (gold).
-Output: score in -3..+3 -> HOLD/ACCUMULATE, HOLD, NEUTRAL, REDUCE, LIQUIDATE.
-
-## Validation so far
-- 200d-MA trend filter beat buy-and-hold on real daily data 2017-2026:
-  +9,510% vs +641%, max DD -55% vs -77%. v1 F&G-only scoring failed; replaced.
-- Data quality: every chart span-verified row-count-verified; Bitstamp `sampled=false`
-  is true daily (default is weekly).
+API keys go in `.env` (gitignored). `.env.example` lists the names.
+`FRED_API_KEY` is optional — keyless sources cover everything except the 15 FRED series.
 
 ## Status / Todo
-- [x] Master dataset built (26 charts, 71MB)
-- [ ] FRED API key -> add 17 macro series (liquidity/inflation/credit backbone)
-- [ ] Cron: weekly regime review auto-delivery
-- [ ] Backtest v3 multi-signal vs 2017-2026
-- [ ] Gem-basket layer: apply regime filter to alt basket
-```
+
+- [x] Dataset (41 charts) + manifest + audit
+- [x] Regime engine v4 (14 signals, FRED backbone)
+- [x] DD-protection sweep (breaker layers)
+- [ ] Weekly regime review automation (cron)
+- [ ] Multi-signal backtest vs 2017-2026 (engine-level, not just trend filter)
+- [ ] Gem-basket layer: regime filter applied to an altcoin basket

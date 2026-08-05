@@ -1,6 +1,6 @@
-# Macro Regime v3 - 2026-08-03 13:48 UTC
+# Macro Regime v3 - 2026-08-04 23:41 UTC
 
-## SCORE +1.3 -> **HOLD**
+## SCORE +1.4 -> **HOLD**
 
 **Phase:** PHASE 1: RISK-ON (hold + accumulate)
 
@@ -18,26 +18,26 @@
 | credit | +1 | 1.5 |
 | btc_ma | -1 | 2.0 |
 | fng | +1 | 1.0 |
-| hash | -1 | 0.5 |
+| hash | +1 | 0.5 |
 | real_yield | +0 | 1.0 |
 | cpi | +0 | 0.5 |
 | gold | -1 | 0.5 |
 
 | Reason |
 |---|
-| 10y-3m spread 0.99% (steep normal) |
+| 10y-3m spread 0.90% (steep normal) |
 | stablecoin cap 30d chg -1.5% (flat) |
-| DXY 99.81 above 200d MA 99.14 |
+| DXY 99.88 above 200d MA 99.15 |
 | M2 YoY +5.5% (expanding) |
 | Fed balance sheet 60d chg +1.0% (flat) |
-| VIX 16.0 (calm risk-on) |
+| VIX 16.5 (calm risk-on) |
 | SPX 1 |
-| HY spread 2.84% (tight risk-on) |
-| BTC 62666.40 below 200d MA 70963.05 |
-| F&G 28 |
-| hashrate 903600324.69 below 60d MA 917236264.88 |
-| 10y real yield 2.41% (neutral) |
+| HY spread 2.78% (tight risk-on) |
+| BTC 64123.78 below 200d MA 70810.03 |
+| F&G 25 |
+| hashrate 941250338.22 above 60d MA 916576000.96 |
+| 10y real yield 2.43% (neutral) |
 | CPI YoY +3.7% (neutral) |
 | gold -1 |
 
-_Generated 2026-08-03 13:48 UTC_
+_Generated 2026-08-04 23:41 UTC_
