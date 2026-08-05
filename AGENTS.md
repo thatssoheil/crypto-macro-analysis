@@ -158,7 +158,7 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
 
 ## Current state (context for agents)
 
-- Latest regime read 2026-08-05: score **+1.4 -> HOLD**, PHASE 1 risk-on.
-  BTC $64.1k still below its 200d MA $70.8k - "fuel present, ignition not yet."
+- Latest regime read 2026-08-05: score **+1.3 -> HOLD**, PHASE 1 risk-on.
+  BTC $64.6k still below its 200d MA $70.7k - "fuel present, ignition not yet."
 - Open items: gem-basket layer (regime filter on an
   alt basket); per-protocol usage data (DAU/fees) is paywalled (Artemis/TokenTerminal).

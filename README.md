@@ -19,6 +19,9 @@ A 50d-MA-or-DD-20% breaker caps the worst experienced drawdown at **~-20%**.
   **HOLD / CASH / BUY-the-dip** phase, using 14 weighted signals across 4 causal groups.
 - **Backtest + audit scripts** proving (and checking) every claim with real data.
 
+**Latest regime read (2026-08-05): score +1.3 -> HOLD, Phase 1 risk-on.**
+BTC $64.6k below its 200d MA $70.7k. Fresh reads: `bash scripts/refresh.sh`.
+
 ## Quickstart
 
 ```bash
