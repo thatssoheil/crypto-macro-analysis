@@ -39,17 +39,19 @@ python strategies/macro_regime_v3.py
 python strategies/audit_dataset.py
 ```
 
-## Self-update (permission-gated)
+## Refresh (on-demand, fetch + aggregate)
 
-The repo can refresh itself on any system, only with your permission:
+Data sources append new observations every day (Bitstamp, FRED, Yahoo,
+blockchain.info, alternative.me, DefiLlama, ECB). The repo knows how to fetch
+whatever is new and re-aggregate - just ask:
 
 ```bash
-bash scripts/self_update.sh          # git pull + dataset refresh (if >7d stale) + engine + audit
-bash scripts/self_update.sh --check  # status only (no changes)
+bash scripts/refresh.sh          # fetch latest data + re-run engine + audit
+bash scripts/refresh.sh --check  # status only (last refresh, last verdict)
 ```
 
-On this machine a weekly cron job runs the self-update every Monday 09:00 and
-reports the fresh verdict (local delivery - nothing is pushed or sent anywhere).
+`refresh.sh` only touches local data and the verdict - it never git-pulls,
+pushes, or schedules anything. Runs on any system with a venv.
 
 ## The dataset (data/macro_dataset/, 40 charts)
 
@@ -137,5 +139,5 @@ API keys go in `.env` (gitignored). `.env.example` lists the names.
 - [x] Regime engine v4 (14 signals, FRED backbone)
 - [x] DD-protection sweep (breaker layers)
 - [x] Multi-signal backtest vs 2017-2026 (v4 composite: does NOT beat MA filter; hysteresis helps DD)
-- [ ] Weekly regime review automation (cron)
+- [x] On-demand refresh (`scripts/refresh.sh` - fetch latest + re-aggregate when asked)
 - [ ] Gem-basket layer: regime filter applied to an altcoin basket

@@ -43,24 +43,26 @@ next leg. Everything runs on a locally-owned dataset of 40 CSV charts
 | `strategies/macro_backtest.py` | v1 backtest. |
 | `strategies/macro_backtest_v2.py` | v2 backtest (200d-MA trend filter). |
 | `strategies/build_btc_dataset.py` | Standalone BTC price builder (blockchain.info). |
-| `scripts/self_update.sh` | Self-update runner: git pull + dataset refresh (if >7d stale) + regime engine + audit. Invoked by cron or manually. |
+| `scripts/refresh.sh` | On-demand refresh runner: fetch latest data (charts append daily) + re-run engine + audit. Run when the user asks for an update. `--check` = status only. |
 | `data/macro_dataset/` | 40 charts, one CSV per series + `manifest.json` (source/span/rows per chart) + auto-generated README. |
 | `data/macro/` | Regime reports (`latest.md`, dated JSON) + backtest result JSONs. |
 
-## Self-update (permission-gated)
+## Refresh (on-demand, fetch + aggregate)
 
-The repo is designed to self-update on ANY system, but ONLY with user permission:
+The data sources append new observations every day globally (Bitstamp, FRED,
+Yahoo, blockchain.info, alternative.me, DefiLlama, ECB). The repo is **aware**
+of this: it can fetch whatever is new and re-aggregate at any time, on any
+system. There is NO cron/schedule - refresh happens only when asked:
 
-- **Manual:** `bash scripts/self_update.sh` (full refresh) or `--check` (status only)
-- **Scheduled (this machine):** a weekly cron job runs `scripts/self_update.sh`
-  every Monday 09:00 and reports the fresh verdict. It is `deliver: local`
-  (output saved, not pushed anywhere) - the user opted into this.
-- **The runner is safe by construction:** `git pull --ff-only` (never overwrites
-  local changes, never merge-commits), dataset re-fetch only if `manifest.json`
-  is missing or >7d old, engine + audit run read-only, and it exits 1 on any
-  failure instead of forcing anything.
-- **Any agent or system may run the runner to get a fresh verdict, but must not
-  fetch, push, or modify the repo without explicit user instruction.**
+- **User asks for an update** (or an agent decides a fresh read is needed):
+  `bash scripts/refresh.sh` -> fetch latest charts -> re-run regime engine ->
+  re-run audit -> print verdict.
+- **`bash scripts/refresh.sh --check`** -> status only (last refresh, last verdict).
+- **Scope:** `scripts/refresh.sh` only refreshes LOCAL data + recomputes the
+  verdict. It does NOT git-pull, does NOT push, does NOT schedule anything.
+  `build_macro_dataset.py` fetches keyless sources everywhere; FRED series run
+  when `FRED_API_KEY` is set. If the user asks for an update and the network is
+  down, report the error - never fabricate or use stale data silently.
 
 ## Commands
 
@@ -158,5 +160,5 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
 
 - Latest regime read 2026-08-05: score **+1.4 -> HOLD**, PHASE 1 risk-on.
   BTC $64.1k still below its 200d MA $70.8k - "fuel present, ignition not yet."
-- Open items: weekly regime-review cron; gem-basket layer (regime filter on an
+- Open items: gem-basket layer (regime filter on an
   alt basket); per-protocol usage data (DAU/fees) is paywalled (Artemis/TokenTerminal).
