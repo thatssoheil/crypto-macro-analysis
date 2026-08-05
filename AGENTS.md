@@ -43,8 +43,24 @@ next leg. Everything runs on a locally-owned dataset of 40 CSV charts
 | `strategies/macro_backtest.py` | v1 backtest. |
 | `strategies/macro_backtest_v2.py` | v2 backtest (200d-MA trend filter). |
 | `strategies/build_btc_dataset.py` | Standalone BTC price builder (blockchain.info). |
+| `scripts/self_update.sh` | Self-update runner: git pull + dataset refresh (if >7d stale) + regime engine + audit. Invoked by cron or manually. |
 | `data/macro_dataset/` | 40 charts, one CSV per series + `manifest.json` (source/span/rows per chart) + auto-generated README. |
 | `data/macro/` | Regime reports (`latest.md`, dated JSON) + backtest result JSONs. |
+
+## Self-update (permission-gated)
+
+The repo is designed to self-update on ANY system, but ONLY with user permission:
+
+- **Manual:** `bash scripts/self_update.sh` (full refresh) or `--check` (status only)
+- **Scheduled (this machine):** a weekly cron job runs `scripts/self_update.sh`
+  every Monday 09:00 and reports the fresh verdict. It is `deliver: local`
+  (output saved, not pushed anywhere) - the user opted into this.
+- **The runner is safe by construction:** `git pull --ff-only` (never overwrites
+  local changes, never merge-commits), dataset re-fetch only if `manifest.json`
+  is missing or >7d old, engine + audit run read-only, and it exits 1 on any
+  failure instead of forcing anything.
+- **Any agent or system may run the runner to get a fresh verdict, but must not
+  fetch, push, or modify the repo without explicit user instruction.**
 
 ## Commands
 

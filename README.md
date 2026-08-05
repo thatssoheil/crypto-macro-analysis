@@ -39,6 +39,18 @@ python strategies/macro_regime_v3.py
 python strategies/audit_dataset.py
 ```
 
+## Self-update (permission-gated)
+
+The repo can refresh itself on any system, only with your permission:
+
+```bash
+bash scripts/self_update.sh          # git pull + dataset refresh (if >7d stale) + engine + audit
+bash scripts/self_update.sh --check  # status only (no changes)
+```
+
+On this machine a weekly cron job runs the self-update every Monday 09:00 and
+reports the fresh verdict (local delivery - nothing is pushed or sent anywhere).
+
 ## The dataset (data/macro_dataset/, 40 charts)
 
 | Group | Series | Source | Span |
