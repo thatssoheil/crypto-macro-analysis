@@ -147,3 +147,8 @@ API keys go in `.env` (gitignored). `.env.example` lists the names.
 - [x] Multi-signal backtest vs 2017-2026 (v4 composite: does NOT beat MA filter; hysteresis helps DD)
 - [x] On-demand refresh (`scripts/refresh.sh` - fetch latest + re-aggregate when asked)
 - [ ] Gem-basket layer: regime filter applied to an altcoin basket
+
+## License
+
+MIT - see [LICENSE](LICENSE). Use, modify, and sell freely; keep the
+attribution. No warranty - this is research, not financial advice.
