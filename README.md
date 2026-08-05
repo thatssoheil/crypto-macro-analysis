@@ -9,7 +9,7 @@ A 50d-MA-or-DD-20% breaker caps the worst experienced drawdown at **~-20%**.
 
 ## What this repo gives you
 
-- **A complete, locally-stored macro + crypto dataset** (41 charts, CSV, one file per series)
+- **A complete, locally-stored macro + crypto dataset** (40 charts, CSV, one file per series)
   covering money supply, rates, inflation, dollar, risk appetite, on-chain, and sentiment.
 - **A regime engine** that scores the current macro environment into a
   **HOLD / CASH / BUY-the-dip** phase, using 14 weighted signals across 4 causal groups.
@@ -35,14 +35,14 @@ python strategies/macro_regime_v3.py
 python strategies/audit_dataset.py
 ```
 
-## The dataset (data/macro_dataset/, 41 charts)
+## The dataset (data/macro_dataset/, 40 charts)
 
 | Group | Series | Source | Span |
 |-------|--------|--------|------|
 | **Crypto price** | BTCUSD daily + hourly, ETHUSD daily | Bitstamp | 2011+ |
 | **On-chain** | hash-rate, difficulty, active addresses, transactions, market-cap, total supply | blockchain.info | 2009+ |
 | **Sentiment** | Fear & Greed index | alternative.me | 2018+ |
-| **Crypto liquidity** | stablecoin total supply (USDT/USDC/DAI) | DefiLlama | 2017+ |
+| **Crypto liquidity** | stablecoin total supply (aggregate USDT/USDC/DAI) | DefiLlama | 2017+ |
 | **Dollar/FX** | DXY, EURUSD, USDJPY, USDCNY | Yahoo / ECB | 1999+ |
 | **Rates & curve** | 3m, 2y, 10y, 30y yields, 10y real yield, breakeven | Yahoo / FRED | 1962+ |
 | **Money & Fed** | M2 money supply, Fed balance sheet, effective fed funds | FRED | 1954+ |
@@ -76,10 +76,11 @@ Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 | Test | Result |
 |------|--------|
 | 200d-MA trend filter vs buy-hold (2017-26) | **+9,510% vs +641%**, DD -55% vs -77% |
+| v4 composite (14 signals, score→switch) vs MA filter (2017-26) | **+2,903% vs +2,773%** (DD -65.9% vs -67.2%) — composite does NOT beat the MA filter; add hysteresis (5d) → +3,495%, DD -58.9% |
 | 50d OR DD-20% breaker (2017-26) | **worst DD -19.8%** (vs -83.4% buy-hold) |
 | Fear & Greed A/B (with vs without) | no return benefit, slight DD benefit → kept at 5.3% weight |
 | Lead time before tops | M2 YoY peak + DXY reclaim warn **8-11 months before** 2017 & 2021 tops |
-| Data integrity audit | 41/41 charts clean (gaps/dups/nulls/negatives checked) |
+| Data integrity audit | 40/40 charts clean (gaps/dups/nulls/negatives checked) |
 
 > Window note: 2017-2026 is the analysis window — every fetched series has data there
 > (F&G starts 2018-05, stablecoins 2017, HY spreads 2023). Earlier BTC (2011-2016) is
@@ -92,9 +93,9 @@ API keys go in `.env` (gitignored). `.env.example` lists the names.
 
 ## Status / Todo
 
-- [x] Dataset (41 charts) + manifest + audit
+- [x] Dataset (40 charts) + manifest + audit
 - [x] Regime engine v4 (14 signals, FRED backbone)
 - [x] DD-protection sweep (breaker layers)
+- [x] Multi-signal backtest vs 2017-2026 (v4 composite: does NOT beat MA filter; hysteresis helps DD)
 - [ ] Weekly regime review automation (cron)
-- [ ] Multi-signal backtest vs 2017-2026 (engine-level, not just trend filter)
 - [ ] Gem-basket layer: regime filter applied to an altcoin basket
