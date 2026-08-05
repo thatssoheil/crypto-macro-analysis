@@ -1,4 +1,4 @@
-# Macro Regime v3 - 2026-08-04 23:41 UTC
+# Macro Regime v3 - 2026-08-05 18:03 UTC
 
 ## SCORE +1.4 -> **HOLD**
 
@@ -40,4 +40,4 @@
 | CPI YoY +3.7% (neutral) |
 | gold -1 |
 
-_Generated 2026-08-04 23:41 UTC_
+_Generated 2026-08-05 18:03 UTC_

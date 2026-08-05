@@ -86,6 +86,30 @@ Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 > (F&G starts 2018-05, stablecoins 2017, HY spreads 2023). Earlier BTC (2011-2016) is
 > too volatile for reliable drawdown protection tests.
 
+## Repository layout
+
+```
+macro-invest/
+  strategies/
+    build_macro_dataset.py   # fetch all 40 charts (keyless + FRED when key set)
+    macro_regime_v3.py       # the live regime engine (14 signals, 4 causal groups)
+    audit_dataset.py         # data-integrity + signal-correctness audit
+    macro_backtest_v4.py     # multi-signal composite backtest (2017-2026)
+    macro_backtest_deep.py   # 200d-MA filter, deep history (2011-2026)
+    dd_protection_sweep.py   # drawdown-breaker layer sweep
+    fng_ab_test.py           # Fear & Greed A/B
+    lead_time_analysis.py    # macro early-warning lead-time study
+    macro_regime.py          # v1 engine (F&G-only, deprecated - failed)
+    macro_backtest.py        # v1 backtest
+    macro_backtest_v2.py     # v2 backtest (200d-MA filter)
+    build_btc_dataset.py     # standalone BTC price builder (blockchain.info)
+  data/
+    macro_dataset/           # 40 charts, one CSV per series (+ manifest.json, README.md)
+    macro/                   # regime reports (latest.md + dated JSON) + backtest results
+  .env.example               # copy to .env and fill in FRED_API_KEY
+  requirements.txt
+```
+
 ## Secrets
 
 API keys go in `.env` (gitignored). `.env.example` lists the names.
