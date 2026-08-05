@@ -27,6 +27,11 @@ if [[ ! -x "$PY" ]]; then
     exit 1
 fi
 
+# Load FRED_API_KEY from .env if present (keyless sources always work; FRED needs the key)
+if [[ -f "$REPO_DIR/.env" ]]; then
+    set -a; source "$REPO_DIR/.env"; set +a
+fi
+
 if [[ "${1:-}" == "--check" ]]; then
     echo "=== macro-invest status ==="
     git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || echo "not a git repo"
