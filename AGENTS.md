@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Agent guide for the macro-invest repo. Read this before changing anything.
+Agent guide for the btc-macro-analysis repo. Read this before changing anything.
 README.md has the user-facing docs; this file is the operational contract.
 
 ## What this project is
@@ -9,7 +9,7 @@ Long-term macro-regime investing research for BTC. A regime engine scores the
 macro environment and decides HOLD crypto / CASH out / BUY the dip, using
 phase-based cashing: hold in risk-on, move to cash on regime shift, rebuy the
 next leg. Everything runs on a locally-owned dataset of 40 CSV charts
-(`data/macro_dataset/`). The repo is public (github.com/thatssoheil/macro-invest).
+(`data/macro_dataset/`). The repo is public (github.com/thatssoheil/btc-macro-analysis).
 
 ## Golden rules (tested facts - do not re-litigate)
 
@@ -67,7 +67,7 @@ system. There is NO cron/schedule - refresh happens only when asked:
 ## Commands
 
 ```bash
-cd ~/projects/macro-invest
+cd ~/projects/btc-macro-analysis
 ./.venv/bin/python strategies/macro_regime_v3.py       # engine -> latest.md + JSON
 ./.venv/bin/python strategies/audit_dataset.py         # 12/12 signal checks
 ./.venv/bin/python strategies/macro_backtest_v4.py     # composite backtest -> v4_composite_backtest.json

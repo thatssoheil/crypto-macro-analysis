@@ -25,8 +25,8 @@ BTC $64.6k below its 200d MA $70.7k. Fresh reads: `bash scripts/refresh.sh`.
 ## Quickstart
 
 ```bash
-git clone https://github.com/thatssoheil/macro-invest
-cd macro-invest
+git clone https://github.com/thatssoheil/btc-macro-analysis
+cd btc-macro-analysis
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
@@ -113,7 +113,7 @@ Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 ## Repository layout
 
 ```
-macro-invest/
+btc-macro-analysis/
   strategies/
     build_macro_dataset.py   # fetch all 40 charts (keyless + FRED when key set)
     macro_regime_v3.py       # the live regime engine (14 signals, 4 causal groups)
