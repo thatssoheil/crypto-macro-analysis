@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Macro regime v2 - trend-aware. Backtests 2017-2026.
+"""Macro regime v2 - trend-aware. Backtest window: 2018-05 -> present.
+NOTE: the F&G join binds the start (F&G only exists 2018-05-17+), so despite
+the old "2017-2026" label this backtest's window actually begins 2018-05 -
+that is why its results differ from macro_backtest_v4.py (which starts
+2017-01-01 on the local Bitstamp dataset). Kept for lineage; for the clean
+2017-2026 / 2011-2026 200d-MA numbers use macro_backtest_deep.py.
 Fix: CASH when price < 200d MA (real bear regime) OR (deep drawdown + rising), not mere greed.
 BUY when drawdown from ATH > -40% AND F&G < 30 (capitulation).
 """
-import requests, json
+import requests
 from datetime import datetime, timezone
 from pathlib import Path
 import numpy as np
 
-OUT = Path(__file__).parent.parent / "data" / "macro"
-OUT.mkdir(parents=True, exist_ok=True)
+
 
 def get_fng_history(limit=3000):
     r = requests.get(f"https://api.alternative.me/fng/?limit={limit}&format=json", timeout=30)
@@ -103,9 +107,8 @@ def main():
     for yr in bh_y.index:
         print(f"    {yr.year}: BH {bh_y[yr]:+6.1f}%  TF {tf_y[yr]:+6.1f}%")
 
-    with open(OUT / "regime_v2_backtest.json", "w") as f:
-        json.dump({"events": events, "bh_final": float(bh.iloc[-1]), "tf_final": float(tf.iloc[-1])}, f, indent=2)
-    print(f"\nSaved -> {OUT/'regime_v2_backtest.json'}")
+    # Stateless: results print above; nothing persisted.
+    print(f"\nSaved -> (stateless: results printed above, nothing written)")
 
 if __name__ == "__main__":
     main()

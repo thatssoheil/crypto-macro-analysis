@@ -22,25 +22,25 @@ import pandas as pd
 import numpy as np
 
 DATA = Path(__file__).parent.parent / "data" / "macro_dataset"
-OUT = Path(__file__).parent.parent / "data" / "macro"
+
 
 btc = pd.read_csv(DATA / "btcusd_daily_bitstamp.csv")
 btc["ts"] = pd.to_datetime(btc["ts"], utc=True)
 btc = btc.set_index("ts").sort_index()["close"]
 
-def simulate(exit_rule, reentry_rule, label):
+def simulate(btc_slice, exit_rule, reentry_rule, label):
     """exit_rule(dd_from_ath, px, ma_vals) -> bool exit. reentry_rule -> bool re-enter."""
-    ma200 = btc.rolling(200).mean()
-    ma100 = btc.rolling(100).mean()
-    ma50 = btc.rolling(50).mean()
+    ma200 = btc_slice.rolling(200).mean()
+    ma100 = btc_slice.rolling(100).mean()
+    ma50 = btc_slice.rolling(50).mean()
     ath = 0.0
     in_mkt = True
     exits = 0
     dd_at_exit = []
-    eq = np.empty(len(btc))
+    eq = np.empty(len(btc_slice))
     eq[0] = 10000.0
-    for i in range(1, len(btc)):
-        px = btc.iloc[i]
+    for i in range(1, len(btc_slice)):
+        px = btc_slice.iloc[i]
         ath = max(ath, px)
         dd = px / ath - 1
         if in_mkt:
@@ -51,9 +51,9 @@ def simulate(exit_rule, reentry_rule, label):
         else:
             if reentry_rule(0.0, px, ma200.iloc[i], ma100.iloc[i], ma50.iloc[i]):
                 in_mkt = True
-        ret = btc.iloc[i] / btc.iloc[i-1] - 1
+        ret = btc_slice.iloc[i] / btc_slice.iloc[i-1] - 1
         eq[i] = eq[i-1] * (1 + ret if in_mkt else 1.0)
-    eq = pd.Series(eq, index=btc.index)
+    eq = pd.Series(eq, index=btc_slice.index)
     dd = (eq / eq.cummax() - 1).min() * 100
     return {
         "label": label,
@@ -99,15 +99,14 @@ STRATS = [
     ("100/200 cross",         cross_exit, cross_entry),
 ]
 
-print("=== DD-PROTECTION SWEEP (2011-2026, $10k start, daily closes) ===\n")
-results = []
-for label, ex, re_ in STRATS:
-    r = simulate(ex, re_, label)
-    results.append(r)
-    print(f"  {label:22s} final ${r['final']:>14,.0f} ({r['pct']:>+10,.0f}%)  "
-          f"maxDD {r['max_dd']:>6.1f}%  avgDD@exit {r['avg_dd_at_exit']:>6.1f}%  "
-          f"worstDD@exit {r['worst_dd_at_exit']:>6.1f}%  exits {r['exits']:>3d}")
+def run_window(btc_slice, label):
+    print(f"\n=== DD-PROTECTION SWEEP {label} ($10k start, daily closes) ===\n")
+    for name, ex, re_ in STRATS:
+        r = simulate(btc_slice, ex, re_, name)
+        print(f"  {name:22s} final ${r['final']:>14,.0f} ({r['pct']:>+10,.0f}%)  "
+              f"maxDD {r['max_dd']:>6.1f}%  avgDD@exit {r['avg_dd_at_exit']:>6.1f}%  "
+              f"worstDD@exit {r['worst_dd_at_exit']:>6.1f}%  exits {r['exits']:>3d}")
 
-with open(OUT / "dd_protection_sweep.json", "w") as f:
-    json.dump(results, f, indent=2)
-print(f"\nSaved -> {OUT/'dd_protection_sweep.json'}")
+run_window(btc, "2011-2026 (full history)")
+run_window(btc.loc["2017-01-01":], "2017-2026 (analysis window)")
+# Stateless: results printed above; nothing persisted.

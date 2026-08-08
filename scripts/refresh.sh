@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
 # ============================================================
-# btc-macro-analysis refresh runner (on-demand)
+# btc-macro-analysis refresh runner (on-demand, stateless)
 #
 # Fetches the latest data and re-aggregates the analysis.
 # Charts are appended daily by the sources (Bitstamp, FRED, Yahoo,
 # blockchain.info, alternative.me, DefiLlama, ECB) - running this
 # pulls whatever is new since the last fetch.
 #
+# STATELESS: results are printed to stdout only, never saved.
+# Nothing reads back a previous result - every run regenerates
+# everything from the committed dataset. The only files written
+# are the dataset CSVs (the input), never results.
+#
 # This does NOT git-pull, does NOT schedule anything, and does NOT
 # push. It only refreshes local data + recomputes the verdict.
 # Run it whenever the user asks for an update.
 #
 # Usage:  scripts/refresh.sh            # full refresh + verdict
-#         scripts/refresh.sh --check    # status only (no changes)
+#         scripts/refresh.sh --check    # data status only (no changes)
 #
 # Exit codes: 0 = ok, 1 = failed (check stderr)
 # ============================================================
@@ -33,10 +38,18 @@ if [[ -f "$REPO_DIR/.env" ]]; then
 fi
 
 if [[ "${1:-}" == "--check" ]]; then
-    echo "=== btc-macro-analysis status ==="
+    echo "=== btc-macro-analysis status (stateless) ==="
     git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || echo "not a git repo"
     echo "last data refresh: $(stat -c %y "$REPO_DIR/data/macro_dataset/manifest.json" 2>/dev/null | cut -d. -f1)"
-    echo "latest regime: $(grep -E '^## SCORE' "$REPO_DIR/data/macro/latest.md" 2>/dev/null || echo 'n/a')"
+    # Data freshness = last row of the BTC daily chart (results are never stored)
+    LAST_ROW=$("$PY" -c "
+import pandas as pd
+df = pd.read_csv('$REPO_DIR/data/macro_dataset/btcusd_daily_bitstamp.csv')
+df['ts'] = pd.to_datetime(df['ts'])
+print(df['ts'].iloc[-1].date(), round(float(df['close'].iloc[-1]), 2))
+" 2>/dev/null || echo "n/a")
+    echo "BTC data through: $LAST_ROW"
+    echo "(no saved results - run scripts/refresh.sh to generate the current verdict)"
     exit 0
 fi
 
@@ -45,12 +58,11 @@ echo "=== [1/3] fetch latest data ==="
 # Keyless sources work everywhere; FRED series run when FRED_API_KEY is set.
 "$PY" "$REPO_DIR/strategies/build_macro_dataset.py" 2>&1 | tail -4 || { echo "fetch failed (network?)" >&2; exit 1; }
 
-echo "=== [2/3] regime engine ==="
+echo "=== [2/3] regime engine (stateless: prints verdict, saves nothing) ==="
 "$PY" "$REPO_DIR/strategies/macro_regime_v3.py" 2>&1 | tail -4
 
 echo "=== [3/3] audit ==="
 "$PY" "$REPO_DIR/strategies/audit_dataset.py" 2>&1 | tail -2
 
 echo
-echo "=== DONE. Latest verdict: ==="
-grep -E "^## SCORE" "$REPO_DIR/data/macro/latest.md" 2>/dev/null || echo "no latest.md"
+echo "=== DONE. Verdict above (printed to stdout, not saved). ==="

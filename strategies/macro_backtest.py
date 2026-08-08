@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """Backtest the macro regime signal against 2017-2026 BTC history."""
-import requests, json, time
+import requests, time
 from datetime import datetime, timezone
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
 
-OUT = Path(__file__).parent.parent / "data" / "macro"
-OUT.mkdir(parents=True, exist_ok=True)
+
 
 def get_fng_history(limit=3000):
     """Full Fear & Greed history (daily since 2018)."""
@@ -76,10 +75,7 @@ def main():
         near = [e for e in events if e["to"] == "CASH" and approx[5:7] and abs(int(e["date"][5:7]) - int(approx[5:7])) <= 3 and e["date"].startswith(approx[:4])]
         print(f"  {crash} ({approx}): CASH signals -> {[e['date'] for e in hits]}")
 
-    # Save
-    with open(OUT / "regime_backtest.json", "w") as f:
-        json.dump({"events": events, "daily_count": len(regime_days)}, f, indent=2)
-    print(f"\nSaved {len(events)} events -> {OUT/'regime_backtest.json'}")
+    # Stateless: results print above; nothing persisted.
 
 if __name__ == "__main__":
     main()

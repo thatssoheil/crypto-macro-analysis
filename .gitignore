@@ -17,3 +17,6 @@ results/
 # OS/editor
 .DS_Store
 *.swp
+
+# Results are stateless - never committed (generated fresh each run)
+data/macro/

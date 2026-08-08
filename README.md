@@ -7,9 +7,16 @@ cashing** — hold in risk-on regimes, move to cash on regime shift, rebuy on th
 > engine math, backtest conventions, and data pitfalls (operational contract).
 > README.md is the user-facing overview.
 
-**The core validated edge:** a 200-day moving-average trend filter on BTC beat buy-and-hold
-on real daily data 2017-2026 by **+9,510% vs +641%**, with **-55% vs -77%** max drawdown.
-A 50d-MA-or-DD-20% breaker caps the worst experienced drawdown at **~-20%**.
+**The core validated edge:** a 200-day moving-average trend filter on BTC daily
+beats buy-and-hold over the 2017-2026 analysis window with a much lower max
+drawdown (reproduce: `./.venv/bin/python strategies/macro_backtest_deep.py`).
+A 50d-MA-or-DD-20% breaker caps the worst experienced drawdown around -20%
+(reproduce: `./.venv/bin/python strategies/dd_protection_sweep.py`).
+
+**Stateless by design:** the repo stores code + fetched data only. Every run
+regenerates results fresh from the dataset and prints them to stdout - nothing
+is saved, nothing reads back a previous result. Run any script to get the
+current numbers; docs never hardcode them (they would go stale).
 
 ## What this repo gives you
 
@@ -19,8 +26,7 @@ A 50d-MA-or-DD-20% breaker caps the worst experienced drawdown at **~-20%**.
   **HOLD / CASH / BUY-the-dip** phase, using 14 weighted signals across 4 causal groups.
 - **Backtest + audit scripts** proving (and checking) every claim with real data.
 
-**Latest regime read (2026-08-05): score +1.3 -> HOLD, Phase 1 risk-on.**
-BTC $64.6k below its 200d MA $70.7k. Fresh reads: `bash scripts/refresh.sh`.
+Current verdict: `bash scripts/refresh.sh` (fetches latest data, re-runs engine + audit).
 
 ## Quickstart
 
@@ -42,6 +48,8 @@ python strategies/macro_regime_v3.py
 python strategies/audit_dataset.py
 ```
 
+All scripts print their results to stdout (stateless - nothing is saved).
+
 ## Refresh (on-demand, fetch + aggregate)
 
 Data sources append new observations every day (Bitstamp, FRED, Yahoo,
@@ -50,11 +58,11 @@ whatever is new and re-aggregate - just ask:
 
 ```bash
 bash scripts/refresh.sh          # fetch latest data + re-run engine + audit
-bash scripts/refresh.sh --check  # status only (last refresh, last verdict)
+bash scripts/refresh.sh --check  # status only (HEAD, last fetch, BTC data through)
 ```
 
-`refresh.sh` only touches local data and the verdict - it never git-pulls,
-pushes, or schedules anything. Runs on any system with a venv.
+`refresh.sh` only touches local data and prints the verdict - it never git-pulls,
+pushes, schedules, or saves results. Runs on any system with a venv.
 
 ## The dataset (data/macro_dataset/, 40 charts)
 
@@ -93,18 +101,18 @@ source + span + row-count recorded in `manifest.json`.
 | Hash rate trend | 0.5 | Gold trend | 0.5 |
 
 Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
-**Phase 2 CASH** (≤-0.5). Output written to `data/macro/latest.md` + JSON.
+**Phase 2 CASH** (≤-0.5). Prints the full report to stdout (stateless).
 
-## Validation (all reproducible with the scripts)
+## Validation (reproduce with the scripts - no stored numbers)
 
-| Test | Result |
+| Finding | Reproduce with |
 |------|--------|
-| 200d-MA trend filter vs buy-hold (2017-26) | **+9,510% vs +641%**, DD -55% vs -77% |
-| v4 composite (14 signals, score→switch) vs MA filter (2017-26) | **+2,903% vs +2,773%** (DD -65.9% vs -67.2%) — composite does NOT beat the MA filter; add hysteresis (5d) → +3,495%, DD -58.9% |
-| 50d OR DD-20% breaker (2017-26) | **worst DD -19.8%** (vs -83.4% buy-hold) |
-| Fear & Greed A/B (with vs without) | no return benefit, slight DD benefit → kept at 5.3% weight |
-| Lead time before tops | M2 YoY peak + DXY reclaim warn **8-11 months before** 2017 & 2021 tops |
-| Data integrity audit | 40/40 charts clean (gaps/dups/nulls/negatives checked) |
+| 200d-MA trend filter beats buy-and-hold (2017-26, lower DD) | `strategies/macro_backtest_deep.py` |
+| v4 composite does NOT beat the MA filter; hysteresis trims DD | `strategies/macro_backtest_v4.py` |
+| 50d OR DD-20% breaker = best drawdown protection | `strategies/dd_protection_sweep.py` |
+| Fear & Greed is a risk-trimmer, not a return-driver | `strategies/fng_ab_test.py` |
+| Macro leads tops by ~8-11 months (M2/DXY warning cluster) | `strategies/lead_time_analysis.py` |
+| Data integrity + signal-correctness audit | `strategies/audit_dataset.py` |
 
 > Window note: 2017-2026 is the analysis window — every fetched series has data there
 > (F&G starts 2018-05, stablecoins 2017, HY spreads 2023). Earlier BTC (2011-2016) is
@@ -129,15 +137,19 @@ btc-macro-analysis/
     build_btc_dataset.py     # standalone BTC price builder (blockchain.info)
   data/
     macro_dataset/           # 40 charts, one CSV per series (+ manifest.json, README.md)
-    macro/                   # regime reports (latest.md + dated JSON) + backtest results
+  scripts/
+    refresh.sh               # on-demand fetch + engine + audit (stateless)
   .env.example               # copy to .env and fill in FRED_API_KEY
   requirements.txt
 ```
+
+All results print to stdout; `data/macro/` is gitignored scratch (never committed).
 
 ## Secrets
 
 API keys go in `.env` (gitignored). `.env.example` lists the names.
 `FRED_API_KEY` is optional — keyless sources cover everything except the 15 FRED series.
+Note: a fresh `git clone` deletes `.env` (gitignored) - restore the key after cloning.
 
 ## Status / Todo
 
@@ -146,6 +158,7 @@ API keys go in `.env` (gitignored). `.env.example` lists the names.
 - [x] DD-protection sweep (breaker layers)
 - [x] Multi-signal backtest vs 2017-2026 (v4 composite: does NOT beat MA filter; hysteresis helps DD)
 - [x] On-demand refresh (`scripts/refresh.sh` - fetch latest + re-aggregate when asked)
+- [x] Stateless results (stdout-only; nothing saved, nothing read back)
 - [ ] Gem-basket layer: regime filter applied to an altcoin basket
 
 ## License

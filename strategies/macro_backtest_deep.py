@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
-OUT = Path(__file__).parent.parent / "data" / "macro"
+
 
 def load_btc():
     df = pd.read_csv(Path(__file__).parent.parent / "data" / "macro_dataset" / "btcusd_daily_bitstamp.csv")
@@ -61,8 +61,4 @@ for label, s, e in [
     print(f"  Trend-follow: ${r['tf_final']:>12,.0f}  ({r['tf_pct']:>+9.0f}%)  DD {r['dd_tf']:>5.1f}%  {r['tf_per_yr']:>+6.1f}%/yr")
     print(f"  Buy-hold:     ${r['bh_final']:>12,.0f}  ({r['bh_pct']:>+9.0f}%)  DD {r['dd_bh']:>5.1f}%  {r['bh_per_yr']:>+6.1f}%/yr")
 
-# Save full-window result
-full = backtest("2011-08-18", "2026-08-03")
-with open(OUT / "deep_history_backtest.json", "w") as f:
-    json.dump(full, f, indent=2)
-print(f"\nSaved -> {OUT/'deep_history_backtest.json'}")
+# Stateless: per-window results printed above; nothing persisted.

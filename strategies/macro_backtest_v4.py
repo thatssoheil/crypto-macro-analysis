@@ -23,7 +23,7 @@ import numpy as np
 
 ROOT = Path(__file__).parent.parent
 DATA = ROOT / "data" / "macro_dataset"
-OUT = ROOT / "data" / "macro"
+
 W, END = "2017-01-01", "2026-08-03"
 
 
@@ -210,8 +210,7 @@ def main():
             "fed_bs shift(60) = 60 rows on the WEEKLY file (~60 weeks), matching engine iloc[-61]",
         ],
     }
-    with open(OUT / "v4_composite_backtest.json", "w") as f:
-        json.dump(out, f, indent=2, default=float)
+    # Stateless: results print above; nothing persisted.
 
     # Console
     print(f"=== v4 COMPOSITE BACKTEST {W} -> {END} ($10k) ===\n")
@@ -225,7 +224,7 @@ def main():
     print(f"\nRegime switches ({len(events)}):")
     for e in events:
         print(f"  {e['date']}  {e['to']:>4}  score {e['score']:+.2f}  BTC ${e['btc']:,}")
-    print(f"\nSaved -> {OUT/'v4_composite_backtest.json'}")
+    print(f"\nSaved -> (stateless: results printed above, nothing written)")
 
 
 if __name__ == "__main__":

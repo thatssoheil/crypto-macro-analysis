@@ -14,7 +14,7 @@ import pandas as pd
 import numpy as np
 
 DATA = Path(__file__).parent.parent / "data" / "macro_dataset"
-OUT = Path(__file__).parent.parent / "data" / "macro"
+
 
 def load(name):
     p = DATA / f"{name}.csv"
@@ -122,6 +122,4 @@ for r in (a, b):
     print(f"  {lbl}: final ${r['final']:>12,.0f} ({r['pct']:>+10,.0f}%)  DD {r['dd']:>6.1f}%  cash_days={r['cash_days']:>5}  signals={r['n_signals']}")
 print(f"  Buy-hold:        final $10,000 -> ${a['bh_pct']/100*10000:,.0f} ({a['bh_pct']:+.0f}%)  DD {a['bh_dd']:.1f}%")
 print(f"\n  Delta (F&G effect): {a['pct'] - b['pct']:+.0f}pp return, {a['dd'] - b['dd']:+.1f}pp DD")
-with open(OUT / "fng_ab_test.json", "w") as f:
-    json.dump({"with_fng": a, "without_fng": b}, f, indent=2)
-print(f"  Saved -> {OUT/'fng_ab_test.json'}")
+# Stateless: results printed above; nothing persisted.

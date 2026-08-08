@@ -16,24 +16,35 @@ next leg. Everything runs on a locally-owned dataset of 40 CSV charts
 1. **Analysis window is 2017-2026 only.** Every fetched series must have data
    there (F&G starts 2018-05, stablecoin aggregate 2017-11, HY/IG spreads 2023-08).
    Pre-2017 BTC is too volatile for drawdown-protection tests.
-2. **The 200d-MA trend filter on BTC daily IS the validated edge:**
-   2017-2026 it did +9,510% vs buy-and-hold +641%, max DD -55% vs -77%
-   (true daily data; the "+1,111%" figure from weekly sampling is the known artifact).
-3. **The v4 multi-signal composite does NOT beat the 200d-MA filter**
-   (2017-2026: +2,903% vs +2,773%, DD -65.9% vs -67.2%). Tested, A/B'd.
-   5-day hysteresis improves it to +3,495% / DD -58.9%. Do NOT re-weight the
-   engine signals without an A/B backtest proving the improvement.
+2. **The 200d-MA trend filter on BTC daily IS the validated edge:** it beats
+   buy-and-hold across every window tested (2011-2026 and 2017-2026) with a
+   much lower max drawdown. Reproduce: `strategies/macro_backtest_deep.py`.
+   (The "+1,111%" figure from weekly sampling is the known artifact - always
+   use true daily data, `sampled=false`.)
+3. **The v4 multi-signal composite does NOT beat the 200d-MA filter** as an
+   execution switch (tested, A/B'd: it whipsaws - hundreds of flips vs ~70 for
+   the MA). Hysteresis trims the drawdown but it stays a risk-trimmer, not a
+   return-driver. Use the score as CONTEXT, not the switch. Do NOT re-weight
+   the engine signals without an A/B backtest proving the improvement.
+   Reproduce: `strategies/macro_backtest_v4.py`.
 4. **Every claim needs A/B evidence.** The owner demands a backtest with vs
    without any proposed change before accepting it.
 5. **Secrets live in `.env` (gitignored).** Never commit `.env` or any real key.
+   A fresh `git clone` deletes `.env` - restore `FRED_API_KEY` after cloning
+   (recoverable from session history if lost).
+6. **The repo is STATELESS: results are never saved, never read back.** Every
+   script regenerates its output fresh from the committed dataset and prints
+   to stdout. `data/macro/` is gitignored scratch. Docs never hardcode result
+   numbers - they would go stale as data appends. Run the script for the
+   current number.
 
 ## Repo map
 
 | Path | Purpose |
 |------|---------|
-| `strategies/macro_regime_v3.py` | LIVE regime engine (v4 logic). 14 weighted signals in 4 causal groups, score -3..+3 -> HOLD/ACCUMULATE, HOLD, NEUTRAL, REDUCE, LIQUIDATE + phase label. Consumes local data only, NO fetch. Writes `data/macro/latest.md` + dated JSON. |
+| `strategies/macro_regime_v3.py` | LIVE regime engine (v4 logic). 14 weighted signals in 4 causal groups, score -3..+3 -> HOLD/ACCUMULATE, HOLD, NEUTRAL, REDUCE, LIQUIDATE + phase label. Consumes local data only, NO fetch. Stateless: prints verdict to stdout, saves nothing. |
 | `strategies/build_macro_dataset.py` | Fetches all 40 charts (keyless sources; FRED runs when `FRED_API_KEY` set). Slow network job - only re-run to refresh data. |
-| `strategies/audit_dataset.py` | Data-integrity + signal-correctness audit. RUN BEFORE trusting any aggregation. Recomputes every v4 signal independently (12/12 pass on 2026-08-05). |
+| `strategies/audit_dataset.py` | Data-integrity + signal-correctness audit. RUN BEFORE trusting any aggregation. Recomputes every v4 signal independently (12/12 pass on every run). |
 | `strategies/macro_backtest_v4.py` | Multi-signal composite backtest 2017-2026 (the primary analysis tool). |
 | `strategies/macro_backtest_deep.py` | 200d-MA filter on full 2011-2026 history (deep-window edge). |
 | `strategies/dd_protection_sweep.py` | Drawdown-breaker layer sweep (MA x DD-% breakers). |
@@ -45,7 +56,7 @@ next leg. Everything runs on a locally-owned dataset of 40 CSV charts
 | `strategies/build_btc_dataset.py` | Standalone BTC price builder (blockchain.info). |
 | `scripts/refresh.sh` | On-demand refresh runner: fetch latest data (charts append daily) + re-run engine + audit. Run when the user asks for an update. `--check` = status only. |
 | `data/macro_dataset/` | 40 charts, one CSV per series + `manifest.json` (source/span/rows per chart) + auto-generated README. |
-| `data/macro/` | Regime reports (`latest.md`, dated JSON) + backtest result JSONs. |
+| `data/macro/` | Gitignored scratch. Results are never committed - every script regenerates fresh and prints to stdout. |
 
 ## Refresh (on-demand, fetch + aggregate)
 
@@ -56,24 +67,26 @@ system. There is NO cron/schedule - refresh happens only when asked:
 
 - **User asks for an update** (or an agent decides a fresh read is needed):
   `bash scripts/refresh.sh` -> fetch latest charts -> re-run regime engine ->
-  re-run audit -> print verdict.
-- **`bash scripts/refresh.sh --check`** -> status only (last refresh, last verdict).
+  re-run audit -> print verdict (stdout, nothing saved).
+- **`bash scripts/refresh.sh --check`** -> status only (HEAD, last fetch,
+  BTC data-through date). No saved verdict exists to report.
 - **Scope:** `scripts/refresh.sh` only refreshes LOCAL data + recomputes the
-  verdict. It does NOT git-pull, does NOT push, does NOT schedule anything.
-  `build_macro_dataset.py` fetches keyless sources everywhere; FRED series run
-  when `FRED_API_KEY` is set. If the user asks for an update and the network is
-  down, report the error - never fabricate or use stale data silently.
+  verdict. It does NOT git-pull, does NOT push, does NOT schedule anything,
+  does NOT save results. `build_macro_dataset.py` fetches keyless sources
+  everywhere; FRED series run when `FRED_API_KEY` is set. If the user asks
+  for an update and the network is down, report the error - never fabricate
+  or use stale data silently.
 
 ## Commands
 
 ```bash
 cd ~/projects/btc-macro-analysis
-./.venv/bin/python strategies/macro_regime_v3.py       # engine -> latest.md + JSON
-./.venv/bin/python strategies/audit_dataset.py         # 12/12 signal checks
-./.venv/bin/python strategies/macro_backtest_v4.py     # composite backtest -> v4_composite_backtest.json
-./.venv/bin/python strategies/macro_backtest_deep.py   # deep-history backtest
+./.venv/bin/python strategies/macro_regime_v3.py       # engine -> verdict to stdout
+./.venv/bin/python strategies/audit_dataset.py         # signal checks (12/12 pass)
+./.venv/bin/python strategies/macro_backtest_v4.py     # composite backtest -> stdout
+./.venv/bin/python strategies/macro_backtest_deep.py   # deep-history backtest -> stdout
 ./.venv/bin/python strategies/build_macro_dataset.py   # refresh dataset (slow, network)
-./.venv/bin/python strategies/dd_protection_sweep.py   # DD layer sweep
+./.venv/bin/python strategies/dd_protection_sweep.py   # DD layer sweep -> stdout
 ```
 
 - Use `./.venv/bin/python` directly. Do NOT `source .venv/bin/activate` from a
@@ -107,20 +120,16 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
   `.shift(1)`s the in-market series.
 - **Cash earns 0%** (conservative, no yield).
 - **Daily closes only**; no slippage/fees.
-- **$10k start**; results in `data/macro/*.json`.
-- Known results (2017-2026, $10k, daily closes) - a regression check:
-
-| Strategy | Final | CAGR | MaxDD | Flips |
-|---|---|---|---|---|
-| v4 composite (score >= +0.5) | +2,903% | +42.6% | -65.9% | 239 |
-| v4 + 5d hysteresis | +3,495% | +45.3% | -58.9% | 95 |
-| 200d-MA filter | +2,773% | +41.9% | -67.2% | 69 |
-| buy-and-hold | +6,181% | +54.0% | -83.4% | 0 |
-
-- 200d-MA filter, deep history (2011-2026): +820,555% vs BH +574,821%,
-  DD -80.9% vs -84.9% (see `deep_history_backtest.json`).
-- 50d-MA OR DD-20% breaker (2017-2026): max DD **-19.8%** - the best
-  drawdown-protection layer stack (see `dd_protection_sweep_2017.json`).
+- **$10k start**; results print to stdout (stateless - nothing is saved).
+- **No stored results.** Every backtest regenerates from the current dataset.
+  Any claimed number must be reproduced by running the named script - never
+  copy a figure from an old run into docs (it goes stale as data appends).
+  Qualitative findings (which strategy beats which, DD ordering) are stable;
+  exact percentages are not.
+- Sanity anchors (qualitative, from the validated runs): the 200d-MA filter
+  beats buy-and-hold in every window; the v4 composite whipsaws vs the MA;
+  the 50d-OR-DD-20% breaker has the lowest max DD of the swept layers in the
+  2017-2026 window. Regenerate the numbers with the scripts.
 
 ## Data pitfalls (learned the hard way)
 
@@ -158,7 +167,10 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
 
 ## Current state (context for agents)
 
-- Latest regime read 2026-08-05: score **+1.3 -> HOLD**, PHASE 1 risk-on.
-  BTC $64.6k still below its 200d MA $70.7k - "fuel present, ignition not yet."
+- **No stored verdict.** Run `bash scripts/refresh.sh` for the current read;
+  the engine prints it to stdout. Qualitative context (2026-08): the macro
+  layer reads risk-on (M2 expanding, Fed BS growing, HY tight, curve steep,
+  VIX calm) while BTC still sits below its 200d MA - "fuel present, ignition
+  not yet." The trend filter has been in cash since the 2025-11-03 cross below.
 - Open items: gem-basket layer (regime filter on an
   alt basket); per-protocol usage data (DAU/fees) is paywalled (Artemis/TokenTerminal).

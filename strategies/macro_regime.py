@@ -11,15 +11,14 @@ Data sources (all keyless, free):
   - BTC dominance + BTC price: api.coingecko.com/api/v3/global + /coins/bitcoin
   - DXY: no free keyless source -> optional FRED key (stlouisfed) slots in here
 
-Output: verdict + dated report to data/macro_regime_YYYY-MM-DD.json + latest.md
+Output: verdict to stdout (stateless - nothing persisted)
 """
-import json, sys, os, csv
+import sys, os, csv
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import requests
 
-OUT = Path(__file__).parent.parent / "data" / "macro"
-OUT.mkdir(parents=True, exist_ok=True)
+
 
 # FRED key from env or config (optional - enriches with M2/DXY/rates when present)
 FRED_KEY = os.environ.get("FRED_API_KEY", "")
@@ -145,34 +144,19 @@ def main():
 
     print(f"  Layer 2 (entry): {layer2}")
 
-    # Save report
-    report = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "fng": fng, "fng_delta": fng_delta,
-        "btc_dominance": btc_d, "btc_price": btc_price, "btc_ath": btc_ath,
-        "btc_drawdown_from_ath": round(dd, 1),
-        "fred": fred_data if fred_data else None,
-        "score": score, "verdict": v, "description": desc,
-        "layer2": layer2,
-        "reasons": reasons,
-    }
-    fname = OUT / f"macro_regime_{datetime.now(timezone.utc):%Y-%m-%d}.json"
-    with open(fname, "w") as f:
-        json.dump(report, f, indent=2)
-    with open(OUT / "latest.md", "w") as f:
-        f.write(f"# Macro Regime Report - {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}\n\n")
-        f.write(f"## Verdict: **{v}** (score {score:+d})\n\n")
-        f.write(f"**Action:** {desc}\n\n")
-        f.write(f"**Layer 2 (entry):** {layer2}\n\n")
-        f.write(f"| Indicator | Value | Signal |\n|---|---|---|\n")
-        f.write(f"| Fear & Greed | {fng} | {'buy fear' if fng<30 else 'sell greed' if fng>70 else 'neutral'} |\n")
-        f.write(f"| BTC dominance | {btc_d:.1f}% | {'altseason' if btc_d<45 else 'flight to BTC' if btc_d>60 else 'neutral'} |\n")
-        f.write(f"| BTC drawdown from ATH | {dd:.0f}% | {'accumulate' if dd<-40 else 'late cycle' if dd>-10 else 'neutral'} |\n")
-        if fred_data and "m2" in fred_data:
-            f.write(f"| M2 YoY | {fred_data['m2'][1]:+.1f}% | {'expansion' if fred_data['m2'][1]>3 else 'contraction' if fred_data['m2'][1]<-1 else 'neutral'} |\n")
-        f.write(f"\n_Reported: {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}_\n")
-    print(f"\nSaved: {fname}")
-    print(f"Saved: {OUT / 'latest.md'}")
+    # Stateless: print report to stdout, persist nothing.
+    print(f"\n# Macro Regime Report - {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}")
+    print(f"## Verdict: **{v}** (score {score:+d})")
+    print(f"**Action:** {desc}")
+    print(f"**Layer 2 (entry):** {layer2}")
+    print("| Indicator | Value | Signal |")
+    print("|---|---|---|")
+    print(f"| Fear & Greed | {fng} | {'buy fear' if fng<30 else 'sell greed' if fng>70 else 'neutral'} |")
+    print(f"| BTC dominance | {btc_d:.1f}% | {'altseason' if btc_d<45 else 'flight to BTC' if btc_d>60 else 'neutral'} |")
+    print(f"| BTC drawdown from ATH | {dd:.0f}% | {'accumulate' if dd<-40 else 'late cycle' if dd>-10 else 'neutral'} |")
+    if fred_data and "m2" in fred_data:
+        print(f"| M2 YoY | {fred_data['m2'][1]:+.1f}% | {'expansion' if fred_data['m2'][1]>3 else 'contraction' if fred_data['m2'][1]<-1 else 'neutral'} |")
+    print(f"_Reported: {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}_")
 
 if __name__ == "__main__":
     main()

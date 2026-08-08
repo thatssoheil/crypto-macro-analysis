@@ -9,18 +9,16 @@ Signal groups (each contributes -2..+2, weights tuned to macro causality):
   C. CRYPTO INTERNAL: BTC vs 200d MA, F&G contrarian, on-chain health
   D. INFLATION/REAL ASSETS: gold trend (inflation hedge demand), commodity breadth
 
-Output: data/macro/latest.md + macro_regime_YYYY-MM-DD.json verdict + weighted score.
+Output: full report to stdout (stateless - nothing persisted, re-run to regenerate).
 No data fetch - consumes the local dataset only. Re-run anytime (cadence: weekly/mo).
 """
-import json, csv
+import csv
 from datetime import datetime, timezone
 from pathlib import Path
 import pandas as pd
 import numpy as np
 
 DATA = Path(__file__).parent.parent / "data" / "macro_dataset"
-OUT = Path(__file__).parent.parent / "data" / "macro"
-OUT.mkdir(parents=True, exist_ok=True)
 
 def load(name, date_col="date", val_cols=None):
     p = DATA / f"{name}.csv"
@@ -185,26 +183,20 @@ def main():
     elif score <= -0.5: phase = "PHASE 2: RISK-OFF (cash, wait)"
     else: phase = "TRANSITION (position for next leg)"
 
-    report = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "score": score, "verdict": verdict, "action": action, "phase": phase,
-        "signals": {k: {"v": signals[k], "w": weights[k]} for k in signals},
-        "reasons": reasons,
-    }
-    fname = OUT / f"macro_regime_v3_{datetime.now(timezone.utc):%Y-%m-%d}.json"
-    with open(fname, "w") as f:
-        json.dump(report, f, indent=2)
-    md = OUT / "latest.md"
-    with open(md, "w") as f:
-        f.write(f"# Macro Regime v3 - {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}\n\n")
-        f.write(f"## SCORE {score:+.1f} -> **{verdict}**\n\n**Phase:** {phase}\n\n**Action:** {action}\n\n")
-        f.write("| Signal | Value | Weight |\n|---|---|---|\n")
-        for k in signals:
-            f.write(f"| {k} | {signals[k]:+d} | {weights[k]} |\n")
-        f.write("\n| Reason |\n|---|\n")
-        for r in reasons: f.write(f"| {r} |\n")
-        f.write(f"\n_Generated {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}_\n")
-    print(f"\nSaved: {fname}\nSaved: {md}")
+    # Stateless: print the full report to stdout, persist nothing.
+    # Results are a pure function of the committed dataset - re-run to regenerate.
+    print(f"# Macro Regime v3 - {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}")
+    print(f"## SCORE {score:+.1f} -> **{verdict}**")
+    print(f"**Phase:** {phase}")
+    print(f"**Action:** {action}")
+    print("| Signal | Value | Weight |")
+    print("|---|---|---|")
+    for k in signals:
+        print(f"| {k} | {signals[k]:+d} | {weights[k]} |")
+    print("| Reason |")
+    print("|---|")
+    for r in reasons: print(f"| {r} |")
+    print(f"_Generated {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}_")
     print(f"\nPHASE: {phase}")
 
 if __name__ == "__main__":
