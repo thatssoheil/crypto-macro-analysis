@@ -43,7 +43,9 @@ next leg. Everything runs on a locally-owned dataset of 40 CSV charts
 | Path | Purpose |
 |------|---------|
 | `strategies/macro_regime_v3.py` | LIVE regime engine (v4 logic). 14 weighted signals in 4 causal groups, score -3..+3 -> HOLD/ACCUMULATE, HOLD, NEUTRAL, REDUCE, LIQUIDATE + phase label. Consumes local data only, NO fetch. Stateless: prints verdict to stdout, saves nothing. |
-| `strategies/build_macro_dataset.py` | Fetches all 40 charts (keyless sources; FRED runs when `FRED_API_KEY` set). Slow network job - only re-run to refresh data. |
+| `strategies/eth_macro_regime.py` | ETH live regime engine (full macro backbone + ETH 200d MA + ETH/BTC + DefiLlama TVL). |
+| `strategies/eth_macro_backtest.py` | ETH regime backtest 2017-2026 (validates 50d/200d MA + dual filters on ETH). |
+| `strategies/build_macro_dataset.py` | Fetches all 42 charts (keyless sources; FRED runs when `FRED_API_KEY` set). Slow network job - only re-run to refresh data. |
 | `strategies/audit_dataset.py` | Data-integrity + signal-correctness audit. RUN BEFORE trusting any aggregation. Recomputes every v4 signal independently (12/12 pass on every run). |
 | `strategies/macro_backtest_v4.py` | Multi-signal composite backtest 2017-2026 (the primary analysis tool). |
 | `strategies/macro_backtest_deep.py` | 200d-MA filter on full 2011-2026 history (deep-window edge). |

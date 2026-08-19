@@ -20,7 +20,7 @@ current numbers; docs never hardcode them (they would go stale).
 
 ## What this repo gives you
 
-- **A complete, locally-stored macro + crypto dataset** (40 charts, CSV, one file per series)
+- **A complete, locally-stored macro + crypto dataset** (42 charts, CSV, one file per series)
   covering money supply, rates, inflation, dollar, risk appetite, on-chain, and sentiment.
 - **A regime engine** that scores the current macro environment into a
   **HOLD / CASH / BUY-the-dip** phase, using 14 weighted signals across 4 causal groups.
@@ -123,8 +123,10 @@ Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 ```
 btc-macro-analysis/
   strategies/
-    build_macro_dataset.py   # fetch all 40 charts (keyless + FRED when key set)
-    macro_regime_v3.py       # the live regime engine (14 signals, 4 causal groups)
+    build_macro_dataset.py   # fetch all 42 charts (keyless + FRED when key set)
+    macro_regime_v3.py       # the live BTC regime engine (14 signals, 4 causal groups)
+    eth_macro_regime.py      # live ETH regime engine (macro backbone + ETH internals)
+    eth_macro_backtest.py    # ETH backtest (2017-2026)
     audit_dataset.py         # data-integrity + signal-correctness audit
     macro_backtest_v4.py     # multi-signal composite backtest (2017-2026)
     macro_backtest_deep.py   # 200d-MA filter, deep history (2011-2026)
@@ -136,7 +138,7 @@ btc-macro-analysis/
     macro_backtest_v2.py     # v2 backtest (200d-MA filter)
     build_btc_dataset.py     # standalone BTC price builder (blockchain.info)
   data/
-    macro_dataset/           # 40 charts, one CSV per series (+ manifest.json, README.md)
+    macro_dataset/           # 42 charts, one CSV per series (+ manifest.json, README.md)
   scripts/
     refresh.sh               # on-demand fetch + engine + audit (stateless)
   .env.example               # copy to .env and fill in FRED_API_KEY

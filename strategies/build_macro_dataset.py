@@ -4,7 +4,7 @@ MACRO + CRYPTO MASTER DATASET BUILDER
 All keyless sources verified 2026-08-03. FRED runs when FRED_API_KEY env is set.
 Output: data/macro_dataset/<name>.csv + manifest.json + README.md
 """
-import requests, json, time, csv, os
+import requests, json, time, csv, os, sys
 from datetime import datetime, timezone
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -12,7 +12,16 @@ import xml.etree.ElementTree as ET
 OUT = Path(__file__).parent.parent / "data" / "macro_dataset"
 OUT.mkdir(parents=True, exist_ok=True)
 UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) dataset-builder"}
-manifest = {"built": datetime.now(timezone.utc).isoformat(), "charts": {}}
+# Seed manifest from the previous build: charts that fail to fetch keep their
+# old entry (and their file) instead of silently vanishing or being gutted.
+_charts = {}
+if (OUT / "manifest.json").exists():
+    try:
+        _charts = json.loads((OUT / "manifest.json").read_text()).get("charts", {})
+    except Exception:
+        pass
+manifest = {"built": datetime.now(timezone.utc).isoformat(), "charts": _charts}
+FAILED = []
 FRED_KEY = os.environ.get("FRED_API_KEY", "")
 
 def get(url, tries=4, base_wait=5):
@@ -29,6 +38,10 @@ def get(url, tries=4, base_wait=5):
     return None
 
 def save_csv(name, rows, header, source):
+    if not rows:
+        FAILED.append(name)
+        print(f"  WARN {name}: fetch returned no data - keeping existing file, no manifest update")
+        return
     path = OUT / f"{name}.csv"
     with open(path, "w", newline="") as f:
         w = csv.writer(f); w.writerow(header); w.writerows(rows)
@@ -59,19 +72,21 @@ def bitstamp_ohlc(pair, step, name, header, source, max_iters=1000):
     rows = sorted(set(tuple(r) for r in rows))
     save_csv(name, rows, header, source)
 
-# ========== 1. BITSTAMP: BTC daily + hourly, ETH daily ==========
+# ========== 1. BITSTAMP: BTC daily + hourly, ETH daily, ETHBTC daily ==========
 print("== Bitstamp BTCUSD daily ==")
 bitstamp_ohlc("btcusd", 86400, "btcusd_daily_bitstamp", ["ts","open","high","low","close","volume"], "Bitstamp v2 ohlc")
 print("== Bitstamp BTCUSD hourly ==")
 bitstamp_ohlc("btcusd", 3600, "btcusd_hourly_bitstamp", ["ts","open","high","low","close","volume"], "Bitstamp v2 ohlc")
 print("== Bitstamp ETHUSD daily ==")
 bitstamp_ohlc("ethusd", 86400, "ethusd_daily_bitstamp", ["ts","open","high","low","close","volume"], "Bitstamp v2 ohlc")
+print("== Bitstamp ETHBTC daily ==")
+bitstamp_ohlc("ethbtc", 86400, "ethbtc_daily_bitstamp", ["ts","open","high","low","close","volume"], "Bitstamp v2 ohlc")
 
 # ========== 2. BLOCKCHAIN.INFO on-chain (2009+) ==========
 print("== blockchain.info on-chain ==")
 for chart in ["hash-rate", "difficulty", "n-unique-addresses", "n-transactions", "market-cap", "total-bitcoins"]:
     r = get(f"https://api.blockchain.info/charts/{chart}?timespan=all&format=json&sampled=false")
-    if not r: continue
+    if not r: FAILED.append(f"bi_{chart}"); continue
     vals = r.json()["values"]
     rows = [[datetime.fromtimestamp(p["x"], tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), p["y"]] for p in vals]
     save_csv(f"bi_{chart}", rows, ["ts", "value"], "blockchain.info API")
@@ -83,6 +98,8 @@ r = get("https://api.alternative.me/fng/?limit=3000&format=json")
 if r:
     rows = [[datetime.fromtimestamp(int(d["timestamp"]), tz=timezone.utc).strftime("%Y-%m-%d"), d["value"], d["value_classification"]] for d in r.json()["data"]]
     save_csv("fear_greed", rows, ["date", "value", "classification"], "alternative.me")
+else:
+    FAILED.append("fear_greed")
 
 # ========== 4. YAHOO: macro risk assets (429 backoff, 8s spacing) ==========
 print("== Yahoo macro ==")
@@ -96,6 +113,8 @@ for sym, name in yahoo:
         ts = res["timestamp"]; cl = res["indicators"]["quote"][0]["close"]
         rows = [[datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%d"), c] for t, c in zip(ts, cl) if c is not None]
         save_csv(name, rows, ["date", "close"], "Yahoo Finance")
+    else:
+        FAILED.append(name)
     time.sleep(8)
 
 # ========== 5. ECB official FX (full history 1999+) ==========
@@ -116,9 +135,13 @@ if r:
     for cur, rows in by_cur.items():
         if rows:
             save_csv(f"ecb_{cur.lower()}", rows, ["date", "rate"], "ECB eurofxref-hist")
+        else:
+            FAILED.append(f"ecb_{cur.lower()}")
     print("  NOTE: EURUSD is 57.6% of DXY; USDJPY & USDCNY for risk/FX regime")
+else:
+    FAILED.append("ecb_fx")
 
-# ========== 6. DEFILLAMA stablecoin caps ==========
+# ========== 6. DEFILLAMA: stablecoins + Ethereum TVL ==========
 print("== DefiLlama stablecoins ==")
 r = get("https://stablecoins.llama.fi/stablecoins?includePrices=false")
 if r:
@@ -133,7 +156,17 @@ if r:
     else:
         print("  no stablecoin data")
 else:
+    FAILED.append("stablecoins")
     print("  DefiLlama failed, skipping")
+
+print("== DefiLlama Ethereum chain TVL ==")
+r_tvl = get("https://api.llama.fi/v2/historicalChainTvl/Ethereum")
+if r_tvl:
+    tvl_data = r_tvl.json()
+    rows_tvl = [[datetime.fromtimestamp(p["date"], tz=timezone.utc).strftime("%Y-%m-%d"), p["tvl"]] for p in tvl_data]
+    save_csv("eth_tvl_defillama", rows_tvl, ["date", "tvl_usd"], "DefiLlama historicalChainTvl/Ethereum")
+else:
+    FAILED.append("eth_tvl_defillama")
 
 # ========== 7. FRED (runs when FRED_API_KEY set) ==========
 FRED_SERIES = {"M2SL": "us_m2", "WALCL": "fed_balance_sheet", "DFF": "fed_funds_eff",
@@ -141,20 +174,20 @@ FRED_SERIES = {"M2SL": "us_m2", "WALCL": "fed_balance_sheet", "DFF": "fed_funds_
                "T10YIE": "breakeven10y", "DFII10": "real_yield10y",
                "CPIAUCSL": "cpi", "PCEPI": "pce", "UNRATE": "unemployment",
                "ICSA": "jobless_claims", "PAYEMS": "nonfarm_payrolls",
-               "NAPM": "ism_mfg", "NAPMN": "ism_nonmfg",
                "BAMLH0A0HYM2": "hy_spread", "BAMLC0A0CM": "ig_spread"}
+# NOTE: NAPM/NAPMN (ISM mfg/nonmfg) are DISCONTINUED at FRED - they always fail, excluded.
 if FRED_KEY:
     print("== FRED ==")
     for sid, name in FRED_SERIES.items():
         url = f"https://api.stlouisfed.org/fred/series/observations?series_id={sid}&api_key={FRED_KEY}&file_type=json&sort_order=asc"
         r = get(url)
-        if not r: continue
+        if not r: FAILED.append(f"fred_{name}"); continue
         obs = [o for o in r.json()["observations"] if o["value"] != "."]
         rows = [[o["date"], o["value"]] for o in obs]
         save_csv(f"fred_{name}", rows, ["date", "value"], f"FRED {sid}")
         time.sleep(0.5)
 else:
-    print("== FRED: SKIPPED (no FRED_API_KEY). 17 series ready when key provided: M2, Fed BS, rates, CPI, PCE, UNRATE, claims, payrolls, ISM, HY/IG spreads ==")
+    print("== FRED: SKIPPED (no FRED_API_KEY). 15 series ready when key provided: M2, Fed BS, rates, CPI, PCE, UNRATE, claims, payrolls, HY/IG spreads ==")
 
 # ========== Manifest + README ==========
 with open(OUT / "manifest.json", "w") as f:
@@ -167,3 +200,6 @@ for k, v in manifest["charts"].items():
 readme += ["", "FRED series (17) added when FRED_API_KEY env is set.", "Update cadence: re-run script; charts overwrite in place."]
 (OUT / "README.md").write_text("\n".join(readme))
 print(f"\nDONE. {len(manifest['charts'])} charts -> {OUT}")
+if FAILED:
+    print(f"FAILED ({len(FAILED)}): {', '.join(sorted(FAILED))} - data left untouched; re-run when network is back")
+    sys.exit(1)

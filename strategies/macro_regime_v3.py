@@ -111,10 +111,10 @@ def main():
         reasons.append(f"VIX {v:.1f} ({'calm risk-on' if v<20 else 'stress risk-off' if v>30 else 'neutral'})")
     # 7. SPX trend
     if spx is not None:
-        sc, _ = slope_score(spx)
+        sc, r = slope_score(spx)
         signals["spx"] = sc
         weights["spx"] = 1.5
-        reasons.append(f"SPX {sc}")
+        reasons.append(f"SPX {r}")
     # 8. Credit spreads (HY = risk appetite canary)
     if hy is not None and len(hy) > 5:
         hyv = hy["value"].iloc[-1]
@@ -158,10 +158,10 @@ def main():
         reasons.append(f"CPI YoY {cpi_yoy*100:+.1f}% ({'contained' if cpi_yoy<0.03 else 'hot' if cpi_yoy>0.05 else 'neutral'})")
     # 14. Gold trend
     if gold is not None:
-        gold_sc, _ = slope_score(gold)
+        gold_sc, r = slope_score(gold)
         signals["gold"] = gold_sc
         weights["gold"] = 0.5
-        reasons.append(f"gold {gold_sc}")
+        reasons.append(f"gold {r}")
 
     # ---- Aggregate ----
     total_w = sum(weights.values())
