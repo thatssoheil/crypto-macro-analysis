@@ -1,15 +1,15 @@
 # AGENTS.md
 
-Agent guide for the btc-macro-analysis repo. Read this before changing anything.
+Agent guide for the crypto-macro-analysis repo. Read this before changing anything.
 README.md has the user-facing docs; this file is the operational contract.
 
 ## What this project is
 
-Long-term macro-regime investing research for BTC. A regime engine scores the
+Long-term macro-regime investing research for BTC & ETH. A regime engine scores the
 macro environment and decides HOLD crypto / CASH out / BUY the dip, using
 phase-based cashing: hold in risk-on, move to cash on regime shift, rebuy the
-next leg. Everything runs on a locally-owned dataset of 40 CSV charts
-(`data/macro_dataset/`). The repo is public (github.com/thatssoheil/btc-macro-analysis).
+next leg. Everything runs on a locally-owned dataset of 42 CSV charts
+(`data/macro_dataset/`). The repo is public (github.com/thatssoheil/crypto-macro-analysis).
 
 ## Golden rules (tested facts - do not re-litigate)
 
@@ -82,10 +82,12 @@ system. There is NO cron/schedule - refresh happens only when asked:
 ## Commands
 
 ```bash
-cd ~/projects/btc-macro-analysis
-./.venv/bin/python strategies/macro_regime_v3.py       # engine -> verdict to stdout
+cd ~/projects/crypto-macro-analysis
+./.venv/bin/python strategies/macro_regime_v3.py       # BTC engine -> verdict to stdout
+./.venv/bin/python strategies/eth_macro_regime.py     # ETH engine -> verdict to stdout
 ./.venv/bin/python strategies/audit_dataset.py         # signal checks (12/12 pass)
 ./.venv/bin/python strategies/macro_backtest_v4.py     # composite backtest -> stdout
+./.venv/bin/python strategies/eth_macro_backtest.py   # ETH backtest -> stdout
 ./.venv/bin/python strategies/macro_backtest_deep.py   # deep-history backtest -> stdout
 ./.venv/bin/python strategies/build_macro_dataset.py   # refresh dataset (slow, network)
 ./.venv/bin/python strategies/dd_protection_sweep.py   # DD layer sweep -> stdout

@@ -1,6 +1,6 @@
-# Macro Regime Investing
+# crypto-macro-analysis
 
-Long-term investment research: macro-economics analysis + crypto (BTC) with **phase-based
+Long-term investment research: macro-economics analysis + crypto (BTC & ETH) with **phase-based
 cashing** — hold in risk-on regimes, move to cash on regime shift, rebuy on the next leg up.
 
 > **For agents/AI:** read [`AGENTS.md`](AGENTS.md) first - it has the golden rules,
@@ -31,8 +31,8 @@ Current verdict: `bash scripts/refresh.sh` (fetches latest data, re-runs engine 
 ## Quickstart
 
 ```bash
-git clone https://github.com/thatssoheil/btc-macro-analysis
-cd btc-macro-analysis
+git clone https://github.com/thatssoheil/crypto-macro-analysis
+cd crypto-macro-analysis
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
@@ -121,7 +121,7 @@ Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 ## Repository layout
 
 ```
-btc-macro-analysis/
+crypto-macro-analysis/
   strategies/
     build_macro_dataset.py   # fetch all 42 charts (keyless + FRED when key set)
     macro_regime_v3.py       # the live BTC regime engine (14 signals, 4 causal groups)

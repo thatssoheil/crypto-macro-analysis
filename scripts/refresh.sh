@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# btc-macro-analysis refresh runner (on-demand, stateless)
+# crypto-macro-analysis refresh runner (on-demand, stateless)
 #
 # Fetches the latest data and re-aggregates the analysis.
 # Charts are appended daily by the sources (Bitstamp, FRED, Yahoo,
@@ -38,7 +38,7 @@ if [[ -f "$REPO_DIR/.env" ]]; then
 fi
 
 if [[ "${1:-}" == "--check" ]]; then
-    echo "=== btc-macro-analysis status (stateless) ==="
+    echo "=== crypto-macro-analysis status (stateless) ==="
     git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || echo "not a git repo"
     echo "last data refresh: $(stat -c %y "$REPO_DIR/data/macro_dataset/manifest.json" 2>/dev/null | cut -d. -f1)"
     # Data freshness = last row of the BTC daily chart (results are never stored)
