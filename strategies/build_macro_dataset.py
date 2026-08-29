@@ -143,20 +143,24 @@ else:
 
 # ========== 6. DEFILLAMA: stablecoins + Ethereum TVL ==========
 print("== DefiLlama stablecoins ==")
-r = get("https://stablecoins.llama.fi/stablecoins?includePrices=false")
+# Aggregate historical chart. Per-coin endpoints (stablecoincharts/{id}) are 404
+# at DefiLlama (verified 2026-08-29) - the aggregate is the only working shape.
+# Payload: [{"date": unix-str, "totalCirculatingUSD": {"peggedUSD": cap}}, ...]
+r = get("https://stablecoins.llama.fi/stablecoincharts/all")
 if r:
-    coins = r.json().get("peggedAssets", [])
-    for c in coins[:3]:
-        sid = c.get("id"); nm = c.get("symbol", "?")
-        r2 = get(f"https://stablecoins.llama.fi/stablecoincharts/{sid}")
-        if r2 and r2.json().get("totalCirculation"):
-            rows = [[datetime.fromtimestamp(p[0], tz=timezone.utc).strftime("%Y-%m-%d"), p[1]] for p in r2.json()["totalCirculation"]["peggedUSD"]]
-            if rows:
-                save_csv(f"stablecoin_{nm.lower()}", rows, ["date", "cap_usd"], "DefiLlama")
+    try:
+        pts = r.json()
+    except Exception:
+        pts = None
+    if isinstance(pts, list) and pts and "totalCirculatingUSD" in pts[-1]:
+        rows = [[datetime.fromtimestamp(int(p["date"]), tz=timezone.utc).strftime("%Y-%m-%d"),
+                 p["totalCirculatingUSD"]["peggedUSD"]] for p in pts]
+        save_csv("stablecoin_total_liquidity", rows, ["date", "total_cap_usd"], "DefiLlama stablecoincharts/all")
     else:
-        print("  no stablecoin data")
+        FAILED.append("stablecoin_total_liquidity")
+        print("  DefiLlama stablecoin payload unexpected shape - keeping existing file")
 else:
-    FAILED.append("stablecoins")
+    FAILED.append("stablecoin_total_liquidity")
     print("  DefiLlama failed, skipping")
 
 print("== DefiLlama Ethereum chain TVL ==")
