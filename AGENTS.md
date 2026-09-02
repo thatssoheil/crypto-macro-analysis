@@ -72,6 +72,10 @@ system. There is NO cron/schedule - refresh happens only when asked:
   re-run audit -> print verdict (stdout, nothing saved).
 - **`bash scripts/refresh.sh --check`** -> status only (HEAD, last fetch,
   BTC data-through date). No saved verdict exists to report.
+- **Hermes `macro` bot (owner-approved 2026-09-02):** the owner's Hermes bot
+  refreshes + commits + pushes the dataset every Sunday 20:00, and off-schedule
+  when BTC moves >=7% in 24h, >=10% since the last committed close, or crosses
+  its 200d MA. The repo itself remains schedule-free - no cron in repo code.
 - **Scope:** `scripts/refresh.sh` only refreshes LOCAL data + recomputes the
   verdict. It does NOT git-pull, does NOT push, does NOT schedule anything,
   does NOT save results. `build_macro_dataset.py` fetches keyless sources

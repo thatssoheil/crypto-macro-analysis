@@ -64,6 +64,11 @@ bash scripts/refresh.sh --check  # status only (HEAD, last fetch, BTC data throu
 `refresh.sh` only touches local data and prints the verdict - it never git-pulls,
 pushes, schedules, or saves results. Runs on any system with a venv.
 
+Automation (owner-approved 2026-09-02): the owner's Hermes `macro` bot runs the
+weekly refresh + dataset commit/push every Sunday evening and off-schedule on
+major BTC moves (>=7%/24h, >=10% since last committed close, or a 200d-MA
+cross). The repo itself stays schedule-free - no cron in repo code.
+
 ## The dataset (data/macro_dataset/, 40 charts)
 
 | Group | Series | Source | Span |
