@@ -58,7 +58,7 @@ def merge_csv(name, rows, header, source):
     The chart therefore grows one day at a time and keeps its own history."""
     if not rows:
         print(f"  WARN {name}: no rows this run - existing file kept untouched")
-        return False
+        return 0
     path = OUT / f"{name}.csv"
     merged = {}
     if path.exists():
@@ -77,7 +77,7 @@ def merge_csv(name, rows, header, source):
     manifest["charts"][name] = {"file": path.name, "rows": len(out),
                                 "source": source + " (merged; 30d window per fetch)", "span": span}
     print(f"  merged {name}.csv ({len(out)} rows, +{len(out) - before} new, {span})")
-    return True
+    return len(out) - before
 
 def write_index():
     """Manifest + auto-generated README for the dataset folder."""
@@ -144,8 +144,12 @@ def _sse_json(text):
     except Exception:
         return None
 
+GN_STATE = {"ok": 0, "fail": 0}
+
 def fetch_glassnode():
-    """One MCP session for all metrics. Returns True if at least one merged."""
+    """One MCP session for all metrics. Returns the number of NEW rows merged
+    (0 = the server answered but nothing changed, which is the normal case when
+    the daily job runs twice in one day)."""
     sess = requests.Session()
     r = sess.post(GN_URL, headers=GN_HEADERS, timeout=45, json={
         "jsonrpc": "2.0", "id": 1, "method": "initialize",
@@ -161,7 +165,7 @@ def fetch_glassnode():
     h = dict(GN_HEADERS); h["mcp-session-id"] = sid
     sess.post(GN_URL, headers=h, timeout=30,
               json={"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
-    ok = 0
+    new_rows = 0
     for name, (ep, asset) in GN_METRICS.items():
         try:
             rr = sess.post(GN_URL, headers=h, timeout=60, json={
@@ -174,13 +178,14 @@ def fetch_glassnode():
             payload = json.loads(content[0]["text"]) if content else {}
             points = payload.get("data") or []
             rows = [[str(p["date"])[:10], p["value"]] for p in points if p.get("value") is not None]
-            if merge_csv(name, rows, ["date", "value"], f"Glassnode MCP {ep} [{asset}]"):
-                ok += 1
+            GN_STATE["ok"] += 1
+            new_rows += merge_csv(name, rows, ["date", "value"], f"Glassnode MCP {ep} [{asset}]")
         except Exception as e:
+            GN_STATE["fail"] += 1
             print(f"  WARN {name}: {type(e).__name__} - keeping existing file")
-    if not ok:
+    if not GN_STATE["ok"]:
         print("  WARN glassnode: no metric fetched this run (on-chain charts unchanged)")
-    return ok > 0
+    return new_rows
 
 
 def bitstamp_ohlc(pair, step, name, header, source, max_iters=1000):
@@ -211,11 +216,14 @@ def bitstamp_ohlc(pair, step, name, header, source, max_iters=1000):
 # sources (Bitstamp walks 15 years, Yahoo is rate-limited to ~8s/call).
 if "--glassnode-only" in sys.argv:
     print("== Glassnode MCP on-chain append (rolling 30d window) ==")
-    ok = fetch_glassnode()
-    write_index()
-    print("DONE. on-chain charts merged in place." if ok else
-          "DONE (no on-chain data this run - existing charts kept).")
-    sys.exit(0 if ok else 1)
+    new_rows = fetch_glassnode()
+    if new_rows:
+        # only touch manifest/README when data actually moved, otherwise the
+        # daily job would commit a timestamp-only bump every single day
+        write_index()
+    print(f"DONE. {new_rows} new on-chain row(s) merged." if new_rows else
+          "DONE. no new on-chain rows (charts untouched, nothing to commit).")
+    sys.exit(0 if GN_STATE["ok"] else 1)
 
 # ========== 1. BITSTAMP: BTC daily + hourly, ETH daily, ETHBTC daily ==========
 print("== Bitstamp BTCUSD daily ==")
