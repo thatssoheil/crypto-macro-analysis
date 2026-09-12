@@ -41,7 +41,8 @@ for name in charts:
     # 3. nulls
     nulls = int(df.isnull().sum().sum())
     # 4. sanity: negative allowed for real-yield, us3m, wti (historical events)
-    neg_ok = name in ("fred_real_yield10y", "us3m", "wti")
+    #    and for the signed on-chain flow charts (an outflow IS negative)
+    neg_ok = name in ("fred_real_yield10y", "us3m", "wti", "gn_exchange_netflow_btc")
     vals = df.select_dtypes(include=[np.number])
     negs = int((vals < 0).sum().sum()) if not vals.empty else 0
     neg_flag = negs and not neg_ok
@@ -125,6 +126,33 @@ if real_y is not None:
 if cpi is not None:
     yoy = cpi["value"].iloc[-1] / cpi["value"].iloc[-13] - 1
     chk("cpi", abs(yoy) < 0.20, f"CPI YoY = {yoy*100:+.1f}% (latest {cpi['value'].iloc[-1]:.1f})")
+
+# E. On-chain (Glassnode, merged from a rolling 30d window)
+# The failure mode for these is a truncated or duplicated series, not a gap:
+# ranges are checked so a unit change or a bad merge is caught loudly.
+gn_nf = load("gn_exchange_netflow_btc")
+gn_exb = load("gn_exchange_balance_btc")
+gn_sopr = load("gn_sopr")
+gn_nupl = load("gn_nupl")
+gn_sp = load("gn_supply_in_profit_pct")
+if gn_nf is not None:
+    v = float(gn_nf["value"].iloc[-1])
+    chk("gn_netflow", abs(v) < 200_000, f"exchange netflow = {v:+,.0f} BTC/day (signed: negative = off exchanges)")
+if gn_exb is not None:
+    v = float(gn_exb["value"].iloc[-1])
+    chk("gn_exchange_balance", 500_000 < v < 8_000_000, f"exchange balance = {v:,.0f} BTC")
+if gn_sopr is not None:
+    v = float(gn_sopr["value"].iloc[-1])
+    chk("gn_sopr", 0.5 < v < 3, f"SOPR = {v:.3f}")
+if gn_nupl is not None:
+    v = float(gn_nupl["value"].iloc[-1])
+    chk("gn_nupl", -1 <= v <= 1, f"NUPL = {v:.3f}")
+if gn_sp is not None:
+    v = float(gn_sp["value"].iloc[-1])
+    chk("gn_supply_in_profit", 0 <= v <= 1, f"supply in profit = {v*100:.1f}%")
+if gn_nf is not None and gn_exb is not None:
+    chk("gn_merge_continuity", len(gn_nf) >= len(gn_exb) - 1 and len(gn_nf) > 1,
+        f"{len(gn_nf)} netflow rows vs {len(gn_exb)} balance rows (merge kept both series)")
 
 print()
 fails = [c for c in checks if not c[1]]

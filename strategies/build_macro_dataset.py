@@ -49,6 +49,132 @@ def save_csv(name, rows, header, source):
     manifest["charts"][name] = {"file": path.name, "rows": len(rows), "source": source, "span": span}
     print(f"  saved {name}.csv ({len(rows)} rows, {span})")
 
+def merge_csv(name, rows, header, source):
+    """Merge-by-date writer for ROLLING-WINDOW sources.
+
+    Glassnode's public endpoint only ever serves the last 30 days, so a plain
+    overwrite would truncate the accumulated series every single run. Merge:
+    existing rows keyed by date, new values win (revisions), ascending output.
+    The chart therefore grows one day at a time and keeps its own history."""
+    if not rows:
+        print(f"  WARN {name}: no rows this run - existing file kept untouched")
+        return False
+    path = OUT / f"{name}.csv"
+    merged = {}
+    if path.exists():
+        with open(path, newline="") as f:
+            rd = csv.reader(f); next(rd, None)
+            for row in rd:
+                if row and row[0]:
+                    merged[row[0]] = row
+    before = len(merged)
+    for row in rows:
+        merged[row[0]] = [str(row[0]), row[1]]
+    out = sorted(merged.values(), key=lambda r: r[0])
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f); w.writerow(header); w.writerows(out)
+    span = f"{out[0][0]} -> {out[-1][0]}"
+    manifest["charts"][name] = {"file": path.name, "rows": len(out),
+                                "source": source + " (merged; 30d window per fetch)", "span": span}
+    print(f"  merged {name}.csv ({len(out)} rows, +{len(out) - before} new, {span})")
+    return True
+
+def write_index():
+    """Manifest + auto-generated README for the dataset folder."""
+    with open(OUT / "manifest.json", "w") as f:
+        json.dump(manifest, f, indent=2)
+    readme = ["# Macro + Crypto Master Dataset", "",
+              f"Built: {manifest['built']}", "",
+              "| Chart | Rows | Span | Source |", "|---|---|---|---|"]
+    for k, v in manifest["charts"].items():
+        readme.append(f"| {k} | {v['rows']} | {v['span']} | {v['source']} |")
+    readme += ["", "FRED series (17) added when FRED_API_KEY env is set.",
+               "On-chain `gn_*` charts: keyless Glassnode MCP, 30d window per fetch, merged by date",
+               "(the local file is the history - run daily to accumulate; `--glassnode-only` is the fast path).",
+               "Update cadence: re-run script; charts overwrite in place (gn_* merge in place)."]
+    (OUT / "README.md").write_text("\n".join(readme))
+
+# ========== 8. GLASSNODE MCP (keyless, rolling 30d window) ==========
+# Free public MCP endpoint - no API key, no account. Reached over JSON-RPC/HTTP.
+# Two facts drive the implementation:
+#   1. Cloudflare fronts the endpoint: a bare client UA gets 403 "Just a moment",
+#      a full browser header set (sec-ch-ua / sec-fetch-* / Origin) gets 200.
+#   2. Every fetch returns AT MOST the last 30 days. Hence merge_csv, never
+#      save_csv - the local file is the long history, the fetch is the delta.
+# BTC-only by design; add an entry with a=ETH for the ETH engine.
+GN_URL = "https://mcp.glassnode.com"
+GN_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    "Content-Type": "application/json",
+    "Accept": "application/json, text/event-stream",
+    "Accept-Language": "en-US,en;q=0.9",
+    "sec-ch-ua": '"Chromium";v="140", "Not=A?Brand";v="24"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Linux"',
+    "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Site": "cross-site",
+    "Origin": GN_URL, "Referer": GN_URL + "/",
+}
+GN_METRICS = {
+    # chart name              Glassnode API endpoint                          what it shows
+    "gn_exchange_netflow_btc": "/v1/metrics/transactions/transfers_volume_exchanges_net",  # BTC/day, + = into exchanges
+    "gn_exchange_balance_btc": "/v1/metrics/distribution/balance_exchanges",               # BTC held on exchanges
+    "gn_sopr":                 "/v1/metrics/indicators/sopr",                              # spent output profit ratio
+    "gn_nupl":                 "/v1/metrics/indicators/net_unrealized_profit_loss",         # unrealised P/L ratio
+    "gn_supply_in_profit_pct": "/v1/metrics/supply/profit_relative",                       # share of supply in profit
+}
+
+def _sse_json(text):
+    """MCP streamable-HTTP replies come SSE-framed: 'event: message\\ndata: {...}'."""
+    for line in text.splitlines():
+        if line.startswith("data:"):
+            try:
+                return json.loads(line[5:].strip())
+            except Exception:
+                pass
+    try:
+        return json.loads(text)
+    except Exception:
+        return None
+
+def fetch_glassnode():
+    """One MCP session for all metrics. Returns True if at least one merged."""
+    sess = requests.Session()
+    r = sess.post(GN_URL, headers=GN_HEADERS, timeout=45, json={
+        "jsonrpc": "2.0", "id": 1, "method": "initialize",
+        "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                   "clientInfo": {"name": "crypto-macro-analysis", "version": "1.0"}}})
+    if r.status_code != 200:
+        print(f"  WARN glassnode unreachable (HTTP {r.status_code}) - on-chain charts keep existing data")
+        return False
+    sid = r.headers.get("mcp-session-id")
+    if not sid:
+        print("  WARN glassnode handshake returned no session id")
+        return False
+    h = dict(GN_HEADERS); h["mcp-session-id"] = sid
+    sess.post(GN_URL, headers=h, timeout=30,
+              json={"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
+    ok = 0
+    for name, ep in GN_METRICS.items():
+        try:
+            rr = sess.post(GN_URL, headers=h, timeout=60, json={
+                "jsonrpc": "2.0", "id": 2, "method": "tools/call",
+                "params": {"name": "fetch_metric",
+                           "arguments": {"endpoint": ep,
+                                         "params": {"a": "BTC", "i": "24h", "s": "1704067200"}}}})
+            body = _sse_json(rr.text) or {}
+            content = (body.get("result") or {}).get("content") or []
+            payload = json.loads(content[0]["text"]) if content else {}
+            points = payload.get("data") or []
+            rows = [[str(p["date"])[:10], p["value"]] for p in points if p.get("value") is not None]
+            if merge_csv(name, rows, ["date", "value"], f"Glassnode MCP {ep}"):
+                ok += 1
+        except Exception as e:
+            print(f"  WARN {name}: {type(e).__name__} - keeping existing file")
+    if not ok:
+        print("  WARN glassnode: no metric fetched this run (on-chain charts unchanged)")
+    return ok > 0
+
+
 def bitstamp_ohlc(pair, step, name, header, source, max_iters=1000):
     """Walk back full history. Bitstamp 'start' is a FROM-filter: each call
     returns 1000 candles from start; set start = oldest - 1000*step."""
@@ -71,6 +197,17 @@ def bitstamp_ohlc(pair, step, name, header, source, max_iters=1000):
             print(f"    ...{rows[-1][0]} ({len(rows)} rows)")
     rows = sorted(set(tuple(r) for r in rows))
     save_csv(name, rows, header, source)
+
+# ========== --glassnode-only fast path (used by the daily check) ==========
+# Appends the rolling-window on-chain charts without refetching the slow
+# sources (Bitstamp walks 15 years, Yahoo is rate-limited to ~8s/call).
+if "--glassnode-only" in sys.argv:
+    print("== Glassnode MCP on-chain append (rolling 30d window) ==")
+    ok = fetch_glassnode()
+    write_index()
+    print("DONE. on-chain charts merged in place." if ok else
+          "DONE (no on-chain data this run - existing charts kept).")
+    sys.exit(0 if ok else 1)
 
 # ========== 1. BITSTAMP: BTC daily + hourly, ETH daily, ETHBTC daily ==========
 print("== Bitstamp BTCUSD daily ==")
@@ -193,16 +330,12 @@ if FRED_KEY:
 else:
     print("== FRED: SKIPPED (no FRED_API_KEY). 15 series ready when key provided: M2, Fed BS, rates, CPI, PCE, UNRATE, claims, payrolls, HY/IG spreads ==")
 
+# ========== 8. GLASSNODE on-chain (keyless public MCP, rolling 30d) ==========
+print("== Glassnode MCP on-chain (exchange flows, SOPR, NUPL, supply in profit) ==")
+fetch_glassnode()
+
 # ========== Manifest + README ==========
-with open(OUT / "manifest.json", "w") as f:
-    json.dump(manifest, f, indent=2)
-readme = [f"# Macro + Crypto Master Dataset", f"",
-          f"Built: {manifest['built']}", f"",
-          f"| Chart | Rows | Span | Source |", f"|---|---|---|---|"]
-for k, v in manifest["charts"].items():
-    readme.append(f"| {k} | {v['rows']} | {v['span']} | {v['source']} |")
-readme += ["", "FRED series (17) added when FRED_API_KEY env is set.", "Update cadence: re-run script; charts overwrite in place."]
-(OUT / "README.md").write_text("\n".join(readme))
+write_index()
 print(f"\nDONE. {len(manifest['charts'])} charts -> {OUT}")
 if FAILED:
     print(f"FAILED ({len(FAILED)}): {', '.join(sorted(FAILED))} - data left untouched; re-run when network is back")

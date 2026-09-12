@@ -89,6 +89,38 @@ Free key at `fredaccount.stlouisfed.org/register`; API docs at
 **Gotchas:** ISM series `NAPM`/`NAPMN` are discontinued - skip them (HTTP 400).
 HY/IG only date back to 2023 - the window is bounded by that.
 
+## On-chain flow + cycle (Glassnode public MCP - keyless)
+
+The free public MCP endpoint (`https://mcp.glassnode.com`, JSON-RPC over HTTP, no key, no
+account) exposes the metric catalogue; each fetch returns **only the last 30 days**.
+
+| Chart | Metric endpoint | What it shows |
+|-------|-----------------|---------------|
+| `gn_exchange_netflow_btc` | `/v1/metrics/transactions/transfers_volume_exchanges_net` | BTC/day net flow to exchanges. Signed: negative = coins leaving exchanges (accumulation), positive = coins moving in (sell-side pressure). |
+| `gn_exchange_balance_btc` | `/v1/metrics/distribution/balance_exchanges` | Total BTC held on exchange addresses. |
+| `gn_sopr` | `/v1/metrics/indicators/sopr` | Spent Output Profit Ratio. ~1.0 = break-even; sustained >1 = profit-taking, <1 = capitulation. |
+| `gn_nupl` | `/v1/metrics/indicators/net_unrealized_profit_loss` | Net Unrealised P/L ratio. Cycle-position gauge (euphoria / belief / optimism / hope / capitulation). |
+| `gn_supply_in_profit_pct` | `/v1/metrics/supply/profit_relative` | Share of supply in profit (0-1). |
+
+> **CRITICAL - rolling window, merge-only.** The server caps every response at 30 days, so a
+> plain overwrite would truncate these charts to a month on every run. They are written by
+> `merge_csv()`: keyed by date, new values win, sorted ascending. The committed CSV **is** the
+> history - it grows one day at a time. Backfill beyond 30 days is impossible for free; missing
+> more than a month creates a permanent gap.
+>
+> **Cloudflare:** the endpoint bot-challenges bare clients. A full browser header set
+> (`sec-ch-ua*`, `sec-fetch-*`, `Origin`, `Referer`) gets HTTP 200; a plain UA gets 403
+> "Just a moment". Headers live in `GN_HEADERS` in the builder.
+>
+> **Fail-soft:** a Glassnode outage prints WARN lines and leaves the files untouched - it does
+> NOT go into `FAILED`, so a Cloudflare hiccup cannot degrade the whole weekly refresh.
+
+Fast append (used by the daily check, ~10s, does not touch the slow sources):
+
+```bash
+./.venv/bin/python strategies/build_macro_dataset.py --glassnode-only
+```
+
 ## What is NOT covered (known gaps)
 
 - Per-protocol usage (DAU/DAA, fees, revenue, txns) - paywalled: Artemis and

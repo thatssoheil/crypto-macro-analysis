@@ -46,7 +46,7 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
 | `strategies/eth_macro_regime.py` | ETH live regime engine (full macro backbone + ETH 200d MA + ETH/BTC + DefiLlama TVL). |
 | `strategies/eth_macro_backtest.py` | ETH regime backtest 2017-2026 (validates 50d/200d MA + dual filters on ETH). |
 | `strategies/btc_eth_rotation.py` | BTC<->ETH rotation engine (validated DUALM50 rule: ETH/BTC 50d MA + ETH 200d MA + VIX/SPX macro gate). Prints the live verdict, the A/B backtest with costs, and the blunt caveats. |
-| `strategies/build_macro_dataset.py` | Fetches all 42 charts (keyless sources; FRED runs when `FRED_API_KEY` set). Slow network job - only re-run to refresh data. |
+| `strategies/build_macro_dataset.py` | Fetches all charts (keyless sources; FRED runs when `FRED_API_KEY` set). Slow network job - only re-run to refresh data. `--glassnode-only` is the fast path (on-chain append only, ~10s). |
 | `strategies/audit_dataset.py` | Data-integrity + signal-correctness audit. RUN BEFORE trusting any aggregation. Recomputes every v4 signal independently (12/12 pass on every run). |
 | `strategies/macro_backtest_v4.py` | Multi-signal composite backtest 2017-2026 (the primary analysis tool). |
 | `strategies/macro_backtest_deep.py` | 200d-MA filter on full 2011-2026 history (deep-window edge). |
@@ -77,6 +77,10 @@ system. There is NO cron/schedule - refresh happens only when asked:
   refreshes + commits + pushes the dataset every Sunday 20:00, and off-schedule
   when BTC moves >=7% in 24h, >=10% since the last committed close, or crosses
   its 200d MA. The repo itself remains schedule-free - no cron in repo code.
+- **Daily on-chain append:** the bot's daily check also runs
+  `build_macro_dataset.py --glassnode-only` and commits/pushes the `gn_*` charts
+  (`Bot daily on-chain append <date>`). Those series are merge-only and can only
+  be built forward - see the Glassnode row in Data pitfalls.
 - **Scope:** `scripts/refresh.sh` only refreshes LOCAL data + recomputes the
   verdict. It does NOT git-pull, does NOT push, does NOT schedule anything,
   does NOT save results. `build_macro_dataset.py` fetches keyless sources
@@ -155,6 +159,14 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
   `global` and `/coins/{id}` (current snapshot) work keyless.
 - FRED ISM series `NAPM`/`NAPMN` are discontinued - they fail, skip them.
 - Yahoo Finance 429s on bursts - space requests ~8s apart with backoff.
+- **Glassnode MCP (`gn_*` charts) is a ROLLING 30-DAY WINDOW.** The free public
+  endpoint returns at most the last 30 days, so these charts are written with
+  `merge_csv()` (merge by date, new wins) and never overwritten. The committed CSV
+  is the history; a gap longer than 30 days is permanent. Do not "fix" a short
+  gn_* chart by refetching - it cannot be backfilled for free.
+- Glassnode's endpoint is Cloudflare-fronted: bare UAs get 403 "Just a moment",
+  full browser headers (see `GN_HEADERS`) get 200. A Glassnode failure is
+  fail-soft (WARN, not `FAILED`) so it cannot degrade the weekly refresh.
 
 ## Simulation pitfalls
 
