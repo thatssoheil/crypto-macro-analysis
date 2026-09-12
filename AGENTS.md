@@ -159,7 +159,16 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
   `global` and `/coins/{id}` (current snapshot) work keyless.
 - FRED ISM series `NAPM`/`NAPMN` are discontinued - they fail, skip them.
 - Yahoo Finance 429s on bursts - space requests ~8s apart with backoff.
-- **Glassnode MCP (`gn_*` charts, 10 series: 5 BTC + 5 `_eth` twins) is a ROLLING
+- **Every `gn_*` chart has a point-in-time twin (`*_pit`) - know which one you are reading.**
+  The live series is Glassnode's current best estimate and IS RESTATED as address clustering
+  improves; `_pit` is immutable "as known then". Measured 2026-09-12 over the same 30 days:
+  BTC netflow differed live-vs-PIT on 30/30 days (mean 232%, max 1,150%) and its 7-day sum
+  flipped sign (+4,904 vs -19,494); balances/SOPR/NUPL differed by 0.2% or less; ETH netflow
+  agreed to 0.2%. So: describe the regime with the live series, **backtest only on PIT or on
+  the committed archive**, and never state a flow direction unless
+  `strategies/onchain_confidence.py` prints CONFIRMED for it. A flow number quoted as fact
+  without the gate is the exact failure this was built to prevent.
+- **Glassnode MCP (`gn_*` charts, 20 series: 5 BTC + 5 ETH, twice over as live + `_pit`) is a ROLLING
   30-DAY WINDOW.** The free public
   endpoint returns at most the last 30 days, so these charts are written with
   `merge_csv()` (merge by date, new wins) and never overwritten. The committed CSV

@@ -120,10 +120,23 @@ Shifted ranges in the audit reflect the different unit scale (ETH balance ~15.6M
 > **Fail-soft:** a Glassnode outage prints WARN lines and leaves the files untouched - it does
 > NOT go into `FAILED`, so a Cloudflare hiccup cannot degrade the whole weekly refresh.
 
+**Point-in-time twins (added 2026-09-12).** Every chart above also exists as `*_pit`
+(`gn_exchange_netflow_btc_pit`, `gn_sopr_pit`, `gn_exchange_netflow_eth_pit`, ...). PIT is
+Glassnode's immutable "data as it was known at the time" variant; the live series above is a
+current best estimate that is restated as address clustering improves. Why both are stored:
+measured over the same 30 days, BTC daily netflow differed from its PIT twin on 30/30 days
+(mean 232%, max 1,150%, including one sign flip, and the 7-day sum flipped sign: +4,904 live
+vs -19,494 PIT), while ETH agreed to 0.2%. Reliability is per-metric-per-window, so the pair is
+what makes a flow read checkable. Free keyless access serves PIT series too (verified).
+
+Rule: **describe with the live series, test with PIT**, and only state a flow direction when
+`strategies/onchain_confidence.py` reports CONFIRMED for that metric.
+
 Fast append (used by the daily check, ~10s, does not touch the slow sources):
 
 ```bash
-./.venv/bin/python strategies/build_macro_dataset.py --glassnode-only
+./.venv/bin/python strategies/build_macro_dataset.py --glassnode-only   # live + PIT twins
+./.venv/bin/python strategies/onchain_confidence.py                     # live-vs-PIT gate
 ```
 
 ## What is NOT covered (known gaps)

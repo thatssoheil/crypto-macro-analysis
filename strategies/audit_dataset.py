@@ -44,7 +44,9 @@ for name in charts:
     #    for the signed on-chain flow charts (an outflow IS negative) and for
     #    NUPL, which goes negative in bear phases by definition
     neg_ok = name in ("fred_real_yield10y", "us3m", "wti", "gn_exchange_netflow_btc",
-                      "gn_exchange_netflow_eth", "gn_nupl", "gn_nupl_eth")
+                      "gn_exchange_netflow_eth", "gn_nupl", "gn_nupl_eth",
+                      "gn_exchange_netflow_btc_pit", "gn_exchange_netflow_eth_pit",
+                      "gn_nupl_pit", "gn_nupl_eth_pit")
     vals = df.select_dtypes(include=[np.number])
     negs = int((vals < 0).sum().sum()) if not vals.empty else 0
     neg_flag = negs and not neg_ok

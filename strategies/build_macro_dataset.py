@@ -129,6 +129,25 @@ GN_METRICS = {
     "gn_sopr_eth":                  ("/v1/metrics/indicators/sopr", "ETH"),
     "gn_nupl_eth":                  ("/v1/metrics/indicators/net_unrealized_profit_loss", "ETH"),
     "gn_supply_in_profit_pct_eth":  ("/v1/metrics/supply/profit_relative", "ETH"),
+    # POINT-IN-TIME twins (2026-09-12). The live series above is a CURRENT best
+    # estimate: entity labelling is revised retroactively (Glassnode's own PIT docs:
+    # "as more heuristics or address linkages are discovered, historical metrics may
+    # be adjusted"), so a flow number read today can differ from the same number read
+    # at the time. Measured: BTC daily netflow differs from its PIT twin on 30/30 days
+    # (mean 232%, max 1,150%, one sign flip) while ETH agrees to 0.2% - hence the
+    # per-metric agreement gate in strategies/onchain_confidence.py rather than trust.
+    # Live = best current estimate (describe the regime with it); PIT = what was
+    # knowable then (backtest on it). Both are fetched in the same MCP session.
+    "gn_exchange_netflow_btc_pit":  ("/v1/metrics/transactions/transfers_volume_exchanges_net_pit", "BTC"),
+    "gn_exchange_balance_btc_pit":  ("/v1/metrics/distribution/balance_exchanges_pit", "BTC"),
+    "gn_sopr_pit":                  ("/v1/metrics/indicators/sopr_pit", "BTC"),
+    "gn_nupl_pit":                  ("/v1/metrics/indicators/net_unrealized_profit_loss_pit", "BTC"),
+    "gn_supply_in_profit_pct_pit":  ("/v1/metrics/supply/profit_relative_pit", "BTC"),
+    "gn_exchange_netflow_eth_pit":  ("/v1/metrics/transactions/transfers_volume_exchanges_net_pit", "ETH"),
+    "gn_exchange_balance_eth_pit":  ("/v1/metrics/distribution/balance_exchanges_pit", "ETH"),
+    "gn_sopr_eth_pit":              ("/v1/metrics/indicators/sopr_pit", "ETH"),
+    "gn_nupl_eth_pit":              ("/v1/metrics/indicators/net_unrealized_profit_loss_pit", "ETH"),
+    "gn_supply_in_profit_pct_eth_pit": ("/v1/metrics/supply/profit_relative_pit", "ETH"),
 }
 
 def _sse_json(text):

@@ -53,16 +53,22 @@ print(df['ts'].iloc[-1].date(), round(float(df['close'].iloc[-1]), 2))
     exit 0
 fi
 
-echo "=== [1/3] fetch latest data ==="
+echo "=== [1/4] fetch latest data ==="
 # build_macro_dataset.py appends whatever is new since the last fetch.
 # Keyless sources work everywhere; FRED series run when FRED_API_KEY is set.
 "$PY" "$REPO_DIR/strategies/build_macro_dataset.py" 2>&1 | tail -4 || { echo "fetch failed (network?)" >&2; exit 1; }
 
-echo "=== [2/3] regime engine (stateless: prints verdict, saves nothing) ==="
+echo "=== [2/4] regime engine (stateless: prints verdict, saves nothing) ==="
 "$PY" "$REPO_DIR/strategies/macro_regime_v3.py" 2>&1 | tail -4
 
-echo "=== [3/3] audit ==="
+echo "=== [3/4] audit ==="
 "$PY" "$REPO_DIR/strategies/audit_dataset.py" 2>&1 | tail -2
+
+echo "=== [4/4] on-chain confidence (live vs point-in-time) ==="
+# The live gn_* series is a best current estimate that gets restated; the _pit twin is
+# what was knowable at the time. A flow read is only stated as a direction when the two
+# agree - see strategies/onchain_confidence.py.
+"$PY" "$REPO_DIR/strategies/onchain_confidence.py" 2>&1 | tail -4
 
 echo
 echo "=== DONE. Verdict above (printed to stdout, not saved). ==="
