@@ -1,5 +1,5 @@
 {
-  "built": "2026-09-12T11:34:46.343302+00:00",
+  "built": "2026-09-12T12:03:57.495112+00:00",
   "charts": {
     "btcusd_daily_bitstamp": {
       "file": "btcusd_daily_bitstamp.csv",
@@ -262,31 +262,61 @@
     "gn_exchange_netflow_btc": {
       "file": "gn_exchange_netflow_btc.csv",
       "rows": 30,
-      "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net (merged; 30d window per fetch)",
+      "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [BTC] (merged; 30d window per fetch)",
       "span": "2026-08-13 -> 2026-09-11"
     },
     "gn_exchange_balance_btc": {
       "file": "gn_exchange_balance_btc.csv",
       "rows": 30,
-      "source": "Glassnode MCP /v1/metrics/distribution/balance_exchanges (merged; 30d window per fetch)",
+      "source": "Glassnode MCP /v1/metrics/distribution/balance_exchanges [BTC] (merged; 30d window per fetch)",
       "span": "2026-08-13 -> 2026-09-11"
     },
     "gn_sopr": {
       "file": "gn_sopr.csv",
       "rows": 30,
-      "source": "Glassnode MCP /v1/metrics/indicators/sopr (merged; 30d window per fetch)",
+      "source": "Glassnode MCP /v1/metrics/indicators/sopr [BTC] (merged; 30d window per fetch)",
       "span": "2026-08-13 -> 2026-09-11"
     },
     "gn_nupl": {
       "file": "gn_nupl.csv",
       "rows": 30,
-      "source": "Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss (merged; 30d window per fetch)",
+      "source": "Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss [BTC] (merged; 30d window per fetch)",
       "span": "2026-08-13 -> 2026-09-11"
     },
     "gn_supply_in_profit_pct": {
       "file": "gn_supply_in_profit_pct.csv",
       "rows": 30,
-      "source": "Glassnode MCP /v1/metrics/supply/profit_relative (merged; 30d window per fetch)",
+      "source": "Glassnode MCP /v1/metrics/supply/profit_relative [BTC] (merged; 30d window per fetch)",
+      "span": "2026-08-13 -> 2026-09-11"
+    },
+    "gn_exchange_netflow_eth": {
+      "file": "gn_exchange_netflow_eth.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [ETH] (merged; 30d window per fetch)",
+      "span": "2026-08-13 -> 2026-09-11"
+    },
+    "gn_exchange_balance_eth": {
+      "file": "gn_exchange_balance_eth.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/distribution/balance_exchanges [ETH] (merged; 30d window per fetch)",
+      "span": "2026-08-13 -> 2026-09-11"
+    },
+    "gn_sopr_eth": {
+      "file": "gn_sopr_eth.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/indicators/sopr [ETH] (merged; 30d window per fetch)",
+      "span": "2026-08-13 -> 2026-09-11"
+    },
+    "gn_nupl_eth": {
+      "file": "gn_nupl_eth.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss [ETH] (merged; 30d window per fetch)",
+      "span": "2026-08-13 -> 2026-09-11"
+    },
+    "gn_supply_in_profit_pct_eth": {
+      "file": "gn_supply_in_profit_pct_eth.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/supply/profit_relative [ETH] (merged; 30d window per fetch)",
       "span": "2026-08-13 -> 2026-09-11"
     }
   }

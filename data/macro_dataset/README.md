@@ -1,6 +1,6 @@
 # Macro + Crypto Master Dataset
 
-Built: 2026-09-12T11:34:46.343302+00:00
+Built: 2026-09-12T12:03:57.495112+00:00
 
 | Chart | Rows | Span | Source |
 |---|---|---|---|
@@ -47,11 +47,16 @@ Built: 2026-09-12T11:34:46.343302+00:00
 | eth_tvl_defillama | 3271 | 2017-09-27 -> 2026-09-10 | DefiLlama historicalChainTvl/Ethereum |
 | ethbtc_daily_bitstamp | 3314 | 2017-08-16 00:00:00 -> 2026-09-11 00:00:00 | Bitstamp v2 ohlc |
 | stablecoin_total_liquidity | 3208 | 2017-11-29 -> 2026-09-10 | DefiLlama stablecoincharts/all |
-| gn_exchange_netflow_btc | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net (merged; 30d window per fetch) |
-| gn_exchange_balance_btc | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/distribution/balance_exchanges (merged; 30d window per fetch) |
-| gn_sopr | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/indicators/sopr (merged; 30d window per fetch) |
-| gn_nupl | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss (merged; 30d window per fetch) |
-| gn_supply_in_profit_pct | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/supply/profit_relative (merged; 30d window per fetch) |
+| gn_exchange_netflow_btc | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [BTC] (merged; 30d window per fetch) |
+| gn_exchange_balance_btc | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/distribution/balance_exchanges [BTC] (merged; 30d window per fetch) |
+| gn_sopr | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/indicators/sopr [BTC] (merged; 30d window per fetch) |
+| gn_nupl | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss [BTC] (merged; 30d window per fetch) |
+| gn_supply_in_profit_pct | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/supply/profit_relative [BTC] (merged; 30d window per fetch) |
+| gn_exchange_netflow_eth | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [ETH] (merged; 30d window per fetch) |
+| gn_exchange_balance_eth | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/distribution/balance_exchanges [ETH] (merged; 30d window per fetch) |
+| gn_sopr_eth | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/indicators/sopr [ETH] (merged; 30d window per fetch) |
+| gn_nupl_eth | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss [ETH] (merged; 30d window per fetch) |
+| gn_supply_in_profit_pct_eth | 30 | 2026-08-13 -> 2026-09-11 | Glassnode MCP /v1/metrics/supply/profit_relative [ETH] (merged; 30d window per fetch) |
 
 FRED series (17) added when FRED_API_KEY env is set.
 On-chain `gn_*` charts: keyless Glassnode MCP, 30d window per fetch, merged by date
