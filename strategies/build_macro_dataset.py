@@ -115,12 +115,20 @@ GN_HEADERS = {
     "Origin": GN_URL, "Referer": GN_URL + "/",
 }
 GN_METRICS = {
-    # chart name              Glassnode API endpoint                          what it shows
-    "gn_exchange_netflow_btc": "/v1/metrics/transactions/transfers_volume_exchanges_net",  # BTC/day, + = into exchanges
-    "gn_exchange_balance_btc": "/v1/metrics/distribution/balance_exchanges",               # BTC held on exchanges
-    "gn_sopr":                 "/v1/metrics/indicators/sopr",                              # spent output profit ratio
-    "gn_nupl":                 "/v1/metrics/indicators/net_unrealized_profit_loss",         # unrealised P/L ratio
-    "gn_supply_in_profit_pct": "/v1/metrics/supply/profit_relative",                       # share of supply in profit
+    # chart name                     (Glassnode API endpoint, asset)
+    "gn_exchange_netflow_btc":      ("/v1/metrics/transactions/transfers_volume_exchanges_net", "BTC"),  # BTC/day, + = into exchanges
+    "gn_exchange_balance_btc":      ("/v1/metrics/distribution/balance_exchanges", "BTC"),               # BTC held on exchanges
+    "gn_sopr":                      ("/v1/metrics/indicators/sopr", "BTC"),                              # spent output profit ratio
+    "gn_nupl":                      ("/v1/metrics/indicators/net_unrealized_profit_loss", "BTC"),        # unrealised P/L ratio
+    "gn_supply_in_profit_pct":      ("/v1/metrics/supply/profit_relative", "BTC"),                       # share of supply in profit
+    # ETH twins for the ETH engine (same metric definitions, a=ETH). Verified live
+    # keyless 2026-09-12; the BTC charts keep their original names, the twins are
+    # suffixed _eth so nothing that already reads the BTC series is disturbed.
+    "gn_exchange_netflow_eth":      ("/v1/metrics/transactions/transfers_volume_exchanges_net", "ETH"),
+    "gn_exchange_balance_eth":      ("/v1/metrics/distribution/balance_exchanges", "ETH"),
+    "gn_sopr_eth":                  ("/v1/metrics/indicators/sopr", "ETH"),
+    "gn_nupl_eth":                  ("/v1/metrics/indicators/net_unrealized_profit_loss", "ETH"),
+    "gn_supply_in_profit_pct_eth":  ("/v1/metrics/supply/profit_relative", "ETH"),
 }
 
 def _sse_json(text):
@@ -154,19 +162,19 @@ def fetch_glassnode():
     sess.post(GN_URL, headers=h, timeout=30,
               json={"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
     ok = 0
-    for name, ep in GN_METRICS.items():
+    for name, (ep, asset) in GN_METRICS.items():
         try:
             rr = sess.post(GN_URL, headers=h, timeout=60, json={
                 "jsonrpc": "2.0", "id": 2, "method": "tools/call",
                 "params": {"name": "fetch_metric",
                            "arguments": {"endpoint": ep,
-                                         "params": {"a": "BTC", "i": "24h", "s": "1704067200"}}}})
+                                         "params": {"a": asset, "i": "24h", "s": "1704067200"}}}})
             body = _sse_json(rr.text) or {}
             content = (body.get("result") or {}).get("content") or []
             payload = json.loads(content[0]["text"]) if content else {}
             points = payload.get("data") or []
             rows = [[str(p["date"])[:10], p["value"]] for p in points if p.get("value") is not None]
-            if merge_csv(name, rows, ["date", "value"], f"Glassnode MCP {ep}"):
+            if merge_csv(name, rows, ["date", "value"], f"Glassnode MCP {ep} [{asset}]"):
                 ok += 1
         except Exception as e:
             print(f"  WARN {name}: {type(e).__name__} - keeping existing file")

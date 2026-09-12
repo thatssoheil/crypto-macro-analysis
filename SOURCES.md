@@ -102,6 +102,11 @@ account) exposes the metric catalogue; each fetch returns **only the last 30 day
 | `gn_nupl` | `/v1/metrics/indicators/net_unrealized_profit_loss` | Net Unrealised P/L ratio. Cycle-position gauge (euphoria / belief / optimism / hope / capitulation). |
 | `gn_supply_in_profit_pct` | `/v1/metrics/supply/profit_relative` | Share of supply in profit (0-1). |
 
+**ETH twins** (same metric definitions, `a=ETH`, for the ETH engine - the BTC charts keep
+their original names, twins are suffixed `_eth`): `gn_exchange_netflow_eth`,
+`gn_exchange_balance_eth`, `gn_sopr_eth`, `gn_nupl_eth`, `gn_supply_in_profit_pct_eth`.
+Shifted ranges in the audit reflect the different unit scale (ETH balance ~15.6M, BTC ~3.3M).
+
 > **CRITICAL - rolling window, merge-only.** The server caps every response at 30 days, so a
 > plain overwrite would truncate these charts to a month on every run. They are written by
 > `merge_csv()`: keyed by date, new values win, sorted ascending. The committed CSV **is** the

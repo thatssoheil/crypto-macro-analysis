@@ -41,8 +41,10 @@ for name in charts:
     # 3. nulls
     nulls = int(df.isnull().sum().sum())
     # 4. sanity: negative allowed for real-yield, us3m, wti (historical events)
-    #    and for the signed on-chain flow charts (an outflow IS negative)
-    neg_ok = name in ("fred_real_yield10y", "us3m", "wti", "gn_exchange_netflow_btc")
+    #    for the signed on-chain flow charts (an outflow IS negative) and for
+    #    NUPL, which goes negative in bear phases by definition
+    neg_ok = name in ("fred_real_yield10y", "us3m", "wti", "gn_exchange_netflow_btc",
+                      "gn_exchange_netflow_eth", "gn_nupl", "gn_nupl_eth")
     vals = df.select_dtypes(include=[np.number])
     negs = int((vals < 0).sum().sum()) if not vals.empty else 0
     neg_flag = negs and not neg_ok
@@ -129,30 +131,41 @@ if cpi is not None:
 
 # E. On-chain (Glassnode, merged from a rolling 30d window)
 # The failure mode for these is a truncated or duplicated series, not a gap:
-# ranges are checked so a unit change or a bad merge is caught loudly.
-gn_nf = load("gn_exchange_netflow_btc")
-gn_exb = load("gn_exchange_balance_btc")
-gn_sopr = load("gn_sopr")
-gn_nupl = load("gn_nupl")
-gn_sp = load("gn_supply_in_profit_pct")
-if gn_nf is not None:
-    v = float(gn_nf["value"].iloc[-1])
-    chk("gn_netflow", abs(v) < 200_000, f"exchange netflow = {v:+,.0f} BTC/day (signed: negative = off exchanges)")
-if gn_exb is not None:
-    v = float(gn_exb["value"].iloc[-1])
-    chk("gn_exchange_balance", 500_000 < v < 8_000_000, f"exchange balance = {v:,.0f} BTC")
-if gn_sopr is not None:
-    v = float(gn_sopr["value"].iloc[-1])
-    chk("gn_sopr", 0.5 < v < 3, f"SOPR = {v:.3f}")
-if gn_nupl is not None:
-    v = float(gn_nupl["value"].iloc[-1])
-    chk("gn_nupl", -1 <= v <= 1, f"NUPL = {v:.3f}")
-if gn_sp is not None:
-    v = float(gn_sp["value"].iloc[-1])
-    chk("gn_supply_in_profit", 0 <= v <= 1, f"supply in profit = {v*100:.1f}%")
-if gn_nf is not None and gn_exb is not None:
-    chk("gn_merge_continuity", len(gn_nf) >= len(gn_exb) - 1 and len(gn_nf) > 1,
-        f"{len(gn_nf)} netflow rows vs {len(gn_exb)} balance rows (merge kept both series)")
+# ranges are checked so a unit change or a bad merge is caught loudly. The ETH
+# twins differ only in the asset symbol - bands are per-asset (1 ETH whale move
+# is a different size to 1 BTC).
+GN_CHARTS = {
+    "BTC": {"netflow": "gn_exchange_netflow_btc", "balance": "gn_exchange_balance_btc",
+            "sopr": "gn_sopr", "nupl": "gn_nupl", "profit": "gn_supply_in_profit_pct",
+            "balance_band": (500_000, 8_000_000), "flow_cap": 200_000},
+    "ETH": {"netflow": "gn_exchange_netflow_eth", "balance": "gn_exchange_balance_eth",
+            "sopr": "gn_sopr_eth", "nupl": "gn_nupl_eth", "profit": "gn_supply_in_profit_pct_eth",
+            "balance_band": (1_000_000, 50_000_000), "flow_cap": 5_000_000},
+}
+for _sym, _m in GN_CHARTS.items():
+    _s = _sym.lower()
+    _nf, _exb = load(_m["netflow"]), load(_m["balance"])
+    _sopr, _nupl, _sp = load(_m["sopr"]), load(_m["nupl"]), load(_m["profit"])
+    if _nf is not None:
+        _v = float(_nf["value"].iloc[-1])
+        chk(f"gn_netflow_{_s}", abs(_v) < _m["flow_cap"],
+            f"{_sym} exchange netflow = {_v:+,.0f}/day (signed: negative = off exchanges)")
+    if _exb is not None:
+        _v = float(_exb["value"].iloc[-1])
+        lo, hi = _m["balance_band"]
+        chk(f"gn_exchange_balance_{_s}", lo < _v < hi, f"{_sym} exchange balance = {_v:,.0f}")
+    if _sopr is not None:
+        _v = float(_sopr["value"].iloc[-1])
+        chk(f"gn_sopr_{_s}", 0.5 < _v < 3, f"{_sym} SOPR = {_v:.3f}")
+    if _nupl is not None:
+        _v = float(_nupl["value"].iloc[-1])
+        chk(f"gn_nupl_{_s}", -1 <= _v <= 1, f"{_sym} NUPL = {_v:.3f}")
+    if _sp is not None:
+        _v = float(_sp["value"].iloc[-1])
+        chk(f"gn_supply_in_profit_{_s}", 0 <= _v <= 1, f"{_sym} supply in profit = {_v*100:.1f}%")
+    if _nf is not None and _exb is not None:
+        chk(f"gn_merge_continuity_{_s}", len(_nf) >= len(_exb) - 1 and len(_nf) > 1,
+            f"{_sym}: {len(_nf)} netflow rows vs {len(_exb)} balance rows (merge kept both)")
 
 print()
 fails = [c for c in checks if not c[1]]

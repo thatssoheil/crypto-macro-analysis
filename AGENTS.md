@@ -159,7 +159,8 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
   `global` and `/coins/{id}` (current snapshot) work keyless.
 - FRED ISM series `NAPM`/`NAPMN` are discontinued - they fail, skip them.
 - Yahoo Finance 429s on bursts - space requests ~8s apart with backoff.
-- **Glassnode MCP (`gn_*` charts) is a ROLLING 30-DAY WINDOW.** The free public
+- **Glassnode MCP (`gn_*` charts, 10 series: 5 BTC + 5 `_eth` twins) is a ROLLING
+  30-DAY WINDOW.** The free public
   endpoint returns at most the last 30 days, so these charts are written with
   `merge_csv()` (merge by date, new wins) and never overwritten. The committed CSV
   is the history; a gap longer than 30 days is permanent. Do not "fix" a short
