@@ -25,6 +25,7 @@ Rules (conventions, NOT outcome-validated - they gate description, not prophecy)
 Exit code 0 always: this is a report, not a build gate. The verdicts land in the daily
 heartbeat and the weekly summary.
 """
+import re
 import sys
 from pathlib import Path
 import pandas as pd
@@ -40,6 +41,11 @@ for asset in ("btc", "eth"):
     PAIRS[f"{asset.upper()} SOPR"] = (f"gn_sopr{sfx}", f"gn_sopr{sfx}_pit", "level")
     PAIRS[f"{asset.upper()} NUPL"] = (f"gn_nupl{sfx}", f"gn_nupl{sfx}_pit", "level")
     PAIRS[f"{asset.upper()} profit%"] = (f"gn_supply_in_profit_pct{sfx}", f"gn_supply_in_profit_pct{sfx}_pit", "level")
+
+
+def _key(label):
+    """Shell/awk-safe machine key: GATE <key> in greppable output."""
+    return re.sub(r"[^a-z0-9]+", "_", label.lower()).strip("_")
 
 
 def load(name):
@@ -85,11 +91,11 @@ for label, (live_name, pit_name, kind) in PAIRS.items():
     if live is None or pit is None:
         rows.append((label, "NO-DATA", f"missing chart ({live_name if live is None else pit_name})"))
         tally["NO-DATA"] = tally.get("NO-DATA", 0) + 1
-        machine.append(f"GATE {label.lower().replace(' ', '_')} NO-DATA")
+        machine.append(f"GATE {_key(label)} NO-DATA")
         continue
     v, m, common = verdict(kind, live, pit)
     tally[v] = tally.get(v, 0) + 1
-    key = label.lower().replace(" ", "_")
+    key = _key(label)
     if kind == "flow":
         machine.append(f"GATE {key} {v} live_7d={m['s7a']:.0f} pit_7d={m['s7b']:.0f} sign={m['sign_agree']:.0f}")
     else:
