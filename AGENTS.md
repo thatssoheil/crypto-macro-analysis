@@ -58,7 +58,7 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
 | `strategies/macro_backtest_v2.py` | v2 backtest (200d-MA trend filter). |
 | `strategies/build_btc_dataset.py` | Standalone BTC price builder (blockchain.info). |
 | `scripts/refresh.sh` | On-demand refresh runner: fetch latest data (charts append daily) + re-run engine + audit. Run when the user asks for an update. `--check` = status only. |
-| `data/macro_dataset/` | 40 charts, one CSV per series + `manifest.json` (source/span/rows per chart) + auto-generated README. |
+| `data/macro_dataset/` | 63 charts, one CSV per series + `manifest.json` (source/span/rows per chart) + auto-generated README. |
 | `data/macro/` | Gitignored scratch. Results are never committed - every script regenerates fresh and prints to stdout. |
 
 ## Refresh (on-demand, fetch + aggregate)
@@ -70,10 +70,11 @@ system. There is NO cron/schedule - refresh happens only when asked:
 
 - **User asks for an update** (or an agent decides a fresh read is needed):
   `bash scripts/refresh.sh` -> fetch latest charts -> re-run regime engine ->
-  re-run audit -> print verdict (stdout, nothing saved).
+  re-run audit -> on-chain confidence gate -> print verdict (stdout, nothing saved).
 - **`bash scripts/refresh.sh --check`** -> status only (HEAD, last fetch,
   BTC data-through date). No saved verdict exists to report.
-- **Hermes `macro` bot (owner-approved 2026-09-02):** the owner's Hermes bot
+- **Hermes `macro` routines (owner-approved 2026-09-02; on the DEFAULT profile since the
+  2026-09-10 consolidation - the `macro` profile no longer exists):** the owner's Hermes bot
   refreshes + commits + pushes the dataset every Sunday 20:00, and off-schedule
   when BTC moves >=7% in 24h, >=10% since the last committed close, or crosses
   its 200d MA. The repo itself remains schedule-free - no cron in repo code.

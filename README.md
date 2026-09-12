@@ -20,13 +20,17 @@ current numbers; docs never hardcode them (they would go stale).
 
 ## What this repo gives you
 
-- **A complete, locally-stored macro + crypto dataset** (42 charts, CSV, one file per series)
-  covering money supply, rates, inflation, dollar, risk appetite, on-chain, and sentiment.
+- **A complete, locally-stored macro + crypto dataset** (63 charts, CSV, one file per series)
+  covering money supply, rates, inflation, dollar, risk appetite, on-chain flow, and sentiment.
+- **An on-chain layer** (keyless Glassnode MCP): exchange flow, exchange balances, SOPR, NUPL and
+  supply-in-profit for BTC and ETH - each stored twice, live and point-in-time, and checked against
+  each other on every run (see "On-chain layer" below).
 - **A regime engine** that scores the current macro environment into a
   **HOLD / CASH / BUY-the-dip** phase, using 14 weighted signals across 4 causal groups.
 - **Backtest + audit scripts** proving (and checking) every claim with real data.
 
-Current verdict: `bash scripts/refresh.sh` (fetches latest data, re-runs engine + audit).
+Current verdict: `bash scripts/refresh.sh` (fetches latest data, re-runs engine + audit +
+on-chain confidence gate).
 
 ## Quickstart
 
@@ -62,19 +66,36 @@ bash scripts/refresh.sh --check  # status only (HEAD, last fetch, BTC data throu
 ```
 
 `refresh.sh` only touches local data and prints the verdict - it never git-pulls,
-pushes, schedules, or saves results. Runs on any system with a venv.
+pushes, schedules, or saves results. Runs on any system with a venv. It runs four stages:
+fetch -> regime engine -> audit -> **on-chain confidence gate**.
 
-Automation (owner-approved 2026-09-02): the owner's Hermes `macro` bot runs the
-weekly refresh + dataset commit/push every Sunday evening and off-schedule on
-major BTC moves (>=7%/24h, >=10% since last committed close, or a 200d-MA
-cross). The repo itself stays schedule-free - no cron in repo code.
+Fast on-chain-only append (about 10 seconds, skips the slow sources):
 
-## The dataset (data/macro_dataset/, 40 charts)
+```bash
+./.venv/bin/python strategies/build_macro_dataset.py --glassnode-only
+./.venv/bin/python strategies/onchain_confidence.py     # live vs point-in-time verdict per metric
+```
+
+Automation (owner-approved; runs on the owner's Hermes default profile since the
+2026-09-10 profile consolidation):
+
+- **Daily check** (20:00, Mon-Sat): live BTC price against the committed close and 200d MA.
+  On a major move (>=7%/24h, >=10% since the last committed close, or a 200d-MA cross) it
+  triggers a full refresh + commit + push. It also appends the on-chain charts every day and
+  pushes them, because Glassnode only serves a 30-day window - those series can only be built
+  forward. Prints the on-chain read plus the confidence verdict on one line, daily either way.
+- **Weekly full update** (Sunday 20:00): full refresh + gate + audit, commits the dataset,
+  pushes, and reports score/phase/audit/on-chain.
+
+The repo itself stays schedule-free - no cron in repo code.
+
+## The dataset (data/macro_dataset/, 63 charts)
 
 | Group | Series | Source | Span |
 |-------|--------|--------|------|
 | **Crypto price** | BTCUSD daily + hourly, ETHUSD daily | Bitstamp | 2011+ |
 | **On-chain** | hash-rate, difficulty, active addresses, transactions, market-cap, total supply | blockchain.info | 2009+ |
+| **On-chain flow** | exchange netflow, exchange balance, SOPR, NUPL, supply in profit (BTC + ETH, live + point-in-time) | Glassnode MCP (keyless) | 30d rolling, accrues locally |
 | **Sentiment** | Fear & Greed index | alternative.me | 2018+ |
 | **Crypto liquidity** | stablecoin total supply (aggregate USDT/USDC/DAI) | DefiLlama | 2017+ |
 | **Dollar/FX** | DXY, EURUSD, USDJPY, USDCNY | Yahoo / ECB | 1999+ |
@@ -90,6 +111,32 @@ source + span + row-count recorded in `manifest.json`.
 
 > **Every data source, endpoint, and known gap is documented in
 > [`SOURCES.md`](SOURCES.md).** Read it before adding a new chart.
+
+## On-chain layer (keyless, and checked for its own reliability)
+
+Five metrics for BTC and for ETH - exchange netflow, exchange balance, SOPR, NUPL, supply in
+profit - fetched from Glassnode's free public MCP endpoint (no key, no account, 30-day rolling
+window, merged by date into the committed CSV so the local file is the history).
+
+Each metric is stored **twice**: the live series (Glassnode's current best estimate) and its
+point-in-time twin (`*_pit`, immutable "as known then"). `strategies/onchain_confidence.py`
+compares the pair on every refresh and prints a verdict per metric:
+
+```
+[CONTRADICTED] BTC netflow   live 7d +4,904 | pit 7d -19,494 | sign agreement 67%
+[CONFIRMED   ] BTC exchange_bal / SOPR / NUPL / profit%   (<=0.3% apart)
+[CONFIRMED   ] ETH netflow and the other ETH pairs        (0.2% apart, 100% sign agreement)
+```
+
+Why this exists: address labelling is revised retroactively, so a flow number read today can
+differ from the same number as it was known at the time. Measured over the same 30 days, BTC
+daily netflow differed from its PIT twin on 30 of 30 days (mean 232%, including a sign flip),
+while balances and SOPR differed by 0.2% or less. Reliability therefore has to be measured per
+metric, not assumed.
+
+**The rule:** describe the regime with the live series, test/backtest on the PIT series (or on
+the committed archive, which is point-in-time by construction), and only state a flow direction
+when the gate prints CONFIRMED for that metric.
 
 ## The regime engine (strategies/macro_regime_v3.py)
 
@@ -128,7 +175,9 @@ Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 ```
 crypto-macro-analysis/
   strategies/
-    build_macro_dataset.py   # fetch all 42 charts (keyless + FRED when key set)
+    build_macro_dataset.py   # fetch all 63 charts (keyless + FRED when key set);
+                             #   --glassnode-only = fast on-chain append
+    onchain_confidence.py    # live vs point-in-time gate for the on-chain charts
     macro_regime_v3.py       # the live BTC regime engine (14 signals, 4 causal groups)
     eth_macro_regime.py      # live ETH regime engine (macro backbone + ETH internals)
     eth_macro_backtest.py    # ETH backtest (2017-2026)
@@ -143,7 +192,7 @@ crypto-macro-analysis/
     macro_backtest_v2.py     # v2 backtest (200d-MA filter)
     build_btc_dataset.py     # standalone BTC price builder (blockchain.info)
   data/
-    macro_dataset/           # 42 charts, one CSV per series (+ manifest.json, README.md)
+    macro_dataset/           # 63 charts, one CSV per series (+ manifest.json, README.md)
   scripts/
     refresh.sh               # on-demand fetch + engine + audit (stateless)
   .env.example               # copy to .env and fill in FRED_API_KEY
@@ -160,12 +209,14 @@ Note: a fresh `git clone` deletes `.env` (gitignored) - restore the key after cl
 
 ## Status / Todo
 
-- [x] Dataset (40 charts) + manifest + audit
+- [x] Dataset (63 charts) + manifest + audit
 - [x] Regime engine v4 (14 signals, FRED backbone)
 - [x] DD-protection sweep (breaker layers)
 - [x] Multi-signal backtest vs 2017-2026 (v4 composite: does NOT beat MA filter; hysteresis helps DD)
 - [x] On-demand refresh (`scripts/refresh.sh` - fetch latest + re-aggregate when asked)
 - [x] Stateless results (stdout-only; nothing saved, nothing read back)
+- [x] On-chain flow layer (keyless Glassnode MCP, BTC + ETH) with live-vs-point-in-time
+      confidence gating and a daily append job
 - [ ] Gem-basket layer: regime filter applied to an altcoin basket
 
 ## License

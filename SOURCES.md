@@ -1,6 +1,6 @@
 # Data Sources
 
-Every series in `data/macro_dataset/` (40 charts) and where it comes from.
+Every series in `data/macro_dataset/` (63 charts) and where it comes from.
 All sources are keyless unless marked. Re-fetch with `bash scripts/refresh.sh`
 or `python strategies/build_macro_dataset.py`.
 
@@ -150,7 +150,7 @@ Fast append (used by the daily check, ~10s, does not touch the slow sources):
 ## Refreshing
 
 ```bash
-bash scripts/refresh.sh          # fetch all 40 charts + re-run engine + audit
+bash scripts/refresh.sh          # fetch all 63 charts + engine + audit + on-chain gate
 bash scripts/refresh.sh --check  # status only
 ```
 
