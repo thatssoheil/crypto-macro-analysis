@@ -1,71 +1,71 @@
 {
-  "built": "2026-09-12T12:35:08.271582+00:00",
+  "built": "2026-09-14T00:00:14.026959+00:00",
   "charts": {
     "btcusd_daily_bitstamp": {
       "file": "btcusd_daily_bitstamp.csv",
-      "rows": 5505,
+      "rows": 5507,
       "source": "Bitstamp v2 ohlc",
-      "span": "2011-08-18 00:00:00 -> 2026-09-12 00:00:00"
+      "span": "2011-08-18 00:00:00 -> 2026-09-14 00:00:00"
     },
     "btcusd_hourly_bitstamp": {
       "file": "btcusd_hourly_bitstamp.csv",
-      "rows": 132097,
+      "rows": 132133,
       "source": "Bitstamp v2 ohlc",
-      "span": "2011-08-18 12:00:00 -> 2026-09-12 12:00:00"
+      "span": "2011-08-18 12:00:00 -> 2026-09-14 00:00:00"
     },
     "ethusd_daily_bitstamp": {
       "file": "ethusd_daily_bitstamp.csv",
-      "rows": 3315,
+      "rows": 3317,
       "source": "Bitstamp v2 ohlc",
-      "span": "2017-08-16 00:00:00 -> 2026-09-12 00:00:00"
+      "span": "2017-08-16 00:00:00 -> 2026-09-14 00:00:00"
     },
     "bi_hash-rate": {
       "file": "bi_hash-rate.csv",
-      "rows": 6451,
+      "rows": 6452,
       "source": "blockchain.info API",
-      "span": "2009-01-03 00:00:00 -> 2026-09-11 00:00:00"
+      "span": "2009-01-03 00:00:00 -> 2026-09-12 00:00:00"
     },
     "bi_difficulty": {
       "file": "bi_difficulty.csv",
-      "rows": 6451,
+      "rows": 6452,
       "source": "blockchain.info API",
-      "span": "2009-01-03 00:00:00 -> 2026-09-11 00:00:00"
+      "span": "2009-01-03 00:00:00 -> 2026-09-12 00:00:00"
     },
     "bi_n-unique-addresses": {
       "file": "bi_n-unique-addresses.csv",
-      "rows": 6425,
+      "rows": 6426,
       "source": "blockchain.info API",
-      "span": "2009-01-03 00:00:00 -> 2026-09-11 00:00:00"
+      "span": "2009-01-03 00:00:00 -> 2026-09-12 00:00:00"
     },
     "bi_n-transactions": {
       "file": "bi_n-transactions.csv",
-      "rows": 6437,
+      "rows": 6438,
       "source": "blockchain.info API",
-      "span": "2009-01-17 00:00:00 -> 2026-09-11 00:00:00"
+      "span": "2009-01-17 00:00:00 -> 2026-09-12 00:00:00"
     },
     "bi_market-cap": {
       "file": "bi_market-cap.csv",
-      "rows": 931300,
+      "rows": 931404,
       "source": "blockchain.info API",
-      "span": "2009-01-03 18:15:05 -> 2026-09-12 08:43:31"
+      "span": "2009-01-03 18:15:05 -> 2026-09-13 08:44:02"
     },
     "bi_total-bitcoins": {
       "file": "bi_total-bitcoins.csv",
-      "rows": 931296,
+      "rows": 931400,
       "source": "blockchain.info API",
-      "span": "2009-01-03 18:15:05 -> 2026-09-12 08:43:31"
+      "span": "2009-01-03 18:15:05 -> 2026-09-13 08:44:02"
     },
     "fear_greed": {
       "file": "fear_greed.csv",
       "rows": 3000,
       "source": "alternative.me",
-      "span": "2026-09-12 -> 2018-06-26"
+      "span": "2026-09-14 -> 2018-06-28"
     },
     "dxy": {
       "file": "dxy.csv",
       "rows": 3773,
       "source": "Yahoo Finance",
-      "span": "2011-09-12 -> 2026-09-11"
+      "span": "2011-09-13 -> 2026-09-13"
     },
     "us10y": {
       "file": "us10y.csv",
@@ -113,25 +113,25 @@
       "file": "gold.csv",
       "rows": 3771,
       "source": "Yahoo Finance",
-      "span": "2011-09-12 -> 2026-09-11"
+      "span": "2011-09-13 -> 2026-09-13"
     },
     "silver": {
       "file": "silver.csv",
       "rows": 3771,
       "source": "Yahoo Finance",
-      "span": "2011-09-12 -> 2026-09-11"
+      "span": "2011-09-13 -> 2026-09-13"
     },
     "wti": {
       "file": "wti.csv",
       "rows": 3772,
       "source": "Yahoo Finance",
-      "span": "2011-09-12 -> 2026-09-11"
+      "span": "2011-09-13 -> 2026-09-13"
     },
     "copper": {
       "file": "copper.csv",
       "rows": 3772,
       "source": "Yahoo Finance",
-      "span": "2011-09-12 -> 2026-09-11"
+      "span": "2011-09-13 -> 2026-09-13"
     },
     "ecb_usd": {
       "file": "ecb_usd.csv",
@@ -243,141 +243,141 @@
     },
     "eth_tvl_defillama": {
       "file": "eth_tvl_defillama.csv",
-      "rows": 3273,
+      "rows": 3274,
       "source": "DefiLlama historicalChainTvl/Ethereum",
-      "span": "2017-09-27 -> 2026-09-12"
+      "span": "2017-09-27 -> 2026-09-13"
     },
     "ethbtc_daily_bitstamp": {
       "file": "ethbtc_daily_bitstamp.csv",
-      "rows": 3315,
+      "rows": 3317,
       "source": "Bitstamp v2 ohlc",
-      "span": "2017-08-16 00:00:00 -> 2026-09-12 00:00:00"
+      "span": "2017-08-16 00:00:00 -> 2026-09-14 00:00:00"
     },
     "stablecoin_total_liquidity": {
       "file": "stablecoin_total_liquidity.csv",
-      "rows": 3210,
+      "rows": 3211,
       "source": "DefiLlama stablecoincharts/all",
-      "span": "2017-11-29 -> 2026-09-12"
+      "span": "2017-11-29 -> 2026-09-13"
     },
     "gn_exchange_netflow_btc": {
       "file": "gn_exchange_netflow_btc.csv",
-      "rows": 30,
+      "rows": 31,
       "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-12"
     },
     "gn_exchange_balance_btc": {
       "file": "gn_exchange_balance_btc.csv",
-      "rows": 30,
+      "rows": 31,
       "source": "Glassnode MCP /v1/metrics/distribution/balance_exchanges [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-12"
     },
     "gn_sopr": {
       "file": "gn_sopr.csv",
-      "rows": 30,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/indicators/sopr [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_nupl": {
       "file": "gn_nupl.csv",
-      "rows": 30,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_supply_in_profit_pct": {
       "file": "gn_supply_in_profit_pct.csv",
-      "rows": 30,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/supply/profit_relative [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_exchange_netflow_eth": {
       "file": "gn_exchange_netflow_eth.csv",
-      "rows": 30,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_exchange_balance_eth": {
       "file": "gn_exchange_balance_eth.csv",
-      "rows": 30,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/distribution/balance_exchanges [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_sopr_eth": {
       "file": "gn_sopr_eth.csv",
-      "rows": 30,
+      "rows": 31,
       "source": "Glassnode MCP /v1/metrics/indicators/sopr [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-12"
     },
     "gn_nupl_eth": {
       "file": "gn_nupl_eth.csv",
-      "rows": 30,
+      "rows": 31,
       "source": "Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-12"
     },
     "gn_supply_in_profit_pct_eth": {
       "file": "gn_supply_in_profit_pct_eth.csv",
-      "rows": 30,
+      "rows": 31,
       "source": "Glassnode MCP /v1/metrics/supply/profit_relative [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-12"
     },
     "gn_exchange_netflow_btc_pit": {
       "file": "gn_exchange_netflow_btc_pit.csv",
-      "rows": 30,
+      "rows": 31,
       "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net_pit [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-12"
     },
     "gn_exchange_balance_btc_pit": {
       "file": "gn_exchange_balance_btc_pit.csv",
-      "rows": 30,
+      "rows": 31,
       "source": "Glassnode MCP /v1/metrics/distribution/balance_exchanges_pit [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-12"
     },
     "gn_sopr_pit": {
       "file": "gn_sopr_pit.csv",
-      "rows": 30,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/indicators/sopr_pit [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_nupl_pit": {
       "file": "gn_nupl_pit.csv",
-      "rows": 30,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss_pit [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_supply_in_profit_pct_pit": {
       "file": "gn_supply_in_profit_pct_pit.csv",
-      "rows": 30,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/supply/profit_relative_pit [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_exchange_netflow_eth_pit": {
       "file": "gn_exchange_netflow_eth_pit.csv",
-      "rows": 30,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net_pit [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_exchange_balance_eth_pit": {
       "file": "gn_exchange_balance_eth_pit.csv",
-      "rows": 30,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/distribution/balance_exchanges_pit [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_sopr_eth_pit": {
       "file": "gn_sopr_eth_pit.csv",
-      "rows": 30,
+      "rows": 31,
       "source": "Glassnode MCP /v1/metrics/indicators/sopr_pit [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-12"
     },
     "gn_nupl_eth_pit": {
       "file": "gn_nupl_eth_pit.csv",
-      "rows": 30,
+      "rows": 31,
       "source": "Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss_pit [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-12"
     },
     "gn_supply_in_profit_pct_eth_pit": {
       "file": "gn_supply_in_profit_pct_eth_pit.csv",
-      "rows": 30,
+      "rows": 31,
       "source": "Glassnode MCP /v1/metrics/supply/profit_relative_pit [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-11"
+      "span": "2026-08-13 -> 2026-09-12"
     }
   }
 }
