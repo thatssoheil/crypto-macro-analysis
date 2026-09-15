@@ -1,5 +1,5 @@
 {
-  "built": "2026-09-14T00:00:14.026959+00:00",
+  "built": "2026-09-15T00:01:04.185771+00:00",
   "charts": {
     "btcusd_daily_bitstamp": {
       "file": "btcusd_daily_bitstamp.csv",
@@ -261,15 +261,15 @@
     },
     "gn_exchange_netflow_btc": {
       "file": "gn_exchange_netflow_btc.csv",
-      "rows": 31,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-12"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_exchange_balance_btc": {
       "file": "gn_exchange_balance_btc.csv",
-      "rows": 31,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/distribution/balance_exchanges [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-12"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_sopr": {
       "file": "gn_sopr.csv",
@@ -303,33 +303,33 @@
     },
     "gn_sopr_eth": {
       "file": "gn_sopr_eth.csv",
-      "rows": 31,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/indicators/sopr [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-12"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_nupl_eth": {
       "file": "gn_nupl_eth.csv",
-      "rows": 31,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-12"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_supply_in_profit_pct_eth": {
       "file": "gn_supply_in_profit_pct_eth.csv",
-      "rows": 31,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/supply/profit_relative [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-12"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_exchange_netflow_btc_pit": {
       "file": "gn_exchange_netflow_btc_pit.csv",
-      "rows": 31,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net_pit [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-12"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_exchange_balance_btc_pit": {
       "file": "gn_exchange_balance_btc_pit.csv",
-      "rows": 31,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/distribution/balance_exchanges_pit [BTC] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-12"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_sopr_pit": {
       "file": "gn_sopr_pit.csv",
@@ -363,21 +363,21 @@
     },
     "gn_sopr_eth_pit": {
       "file": "gn_sopr_eth_pit.csv",
-      "rows": 31,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/indicators/sopr_pit [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-12"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_nupl_eth_pit": {
       "file": "gn_nupl_eth_pit.csv",
-      "rows": 31,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss_pit [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-12"
+      "span": "2026-08-13 -> 2026-09-13"
     },
     "gn_supply_in_profit_pct_eth_pit": {
       "file": "gn_supply_in_profit_pct_eth_pit.csv",
-      "rows": 31,
+      "rows": 32,
       "source": "Glassnode MCP /v1/metrics/supply/profit_relative_pit [ETH] (merged; 30d window per fetch)",
-      "span": "2026-08-13 -> 2026-09-12"
+      "span": "2026-08-13 -> 2026-09-13"
     }
   }
 }
