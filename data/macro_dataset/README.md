@@ -1,11 +1,11 @@
 # Macro + Crypto Master Dataset
 
-Built: 2026-09-18T18:53:52.864701+00:00
+Built: 2026-09-18T19:20:58.400424+00:00
 
 | Chart | Rows | Span | Source |
 |---|---|---|---|
 | btcusd_daily_bitstamp | 5511 | 2011-08-18 00:00:00 -> 2026-09-18 00:00:00 | Bitstamp v2 ohlc |
-| btcusd_hourly_bitstamp | 132247 | 2011-08-18 12:00:00 -> 2026-09-18 18:00:00 | Bitstamp v2 ohlc |
+| btcusd_hourly_bitstamp | 132248 | 2011-08-18 12:00:00 -> 2026-09-18 19:00:00 | Bitstamp v2 ohlc |
 | ethusd_daily_bitstamp | 3321 | 2017-08-16 00:00:00 -> 2026-09-18 00:00:00 | Bitstamp v2 ohlc |
 | bi_hash-rate | 6457 | 2009-01-03 00:00:00 -> 2026-09-17 00:00:00 | blockchain.info API |
 | bi_difficulty | 6457 | 2009-01-03 00:00:00 -> 2026-09-17 00:00:00 | blockchain.info API |

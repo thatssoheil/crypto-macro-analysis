@@ -1,5 +1,5 @@
 {
-  "built": "2026-09-18T18:53:52.864701+00:00",
+  "built": "2026-09-18T19:20:58.400424+00:00",
   "charts": {
     "btcusd_daily_bitstamp": {
       "file": "btcusd_daily_bitstamp.csv",
@@ -9,9 +9,9 @@
     },
     "btcusd_hourly_bitstamp": {
       "file": "btcusd_hourly_bitstamp.csv",
-      "rows": 132247,
+      "rows": 132248,
       "source": "Bitstamp v2 ohlc",
-      "span": "2011-08-18 12:00:00 -> 2026-09-18 18:00:00"
+      "span": "2011-08-18 12:00:00 -> 2026-09-18 19:00:00"
     },
     "ethusd_daily_bitstamp": {
       "file": "ethusd_daily_bitstamp.csv",
