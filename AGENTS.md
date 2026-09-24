@@ -47,7 +47,7 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
 | `strategies/eth_macro_backtest.py` | ETH regime backtest 2017-2026 (validates 50d/200d MA + dual filters on ETH). |
 | `strategies/btc_eth_rotation.py` | BTC<->ETH rotation engine (validated DUALM50 rule: ETH/BTC 50d MA + ETH 200d MA + VIX/SPX macro gate). Prints the live verdict, the A/B backtest with costs, and the blunt caveats. |
 | `strategies/build_macro_dataset.py` | Fetches all charts (keyless sources; FRED runs when `FRED_API_KEY` set). Slow network job - only re-run to refresh data. `--glassnode-only` is the fast path (on-chain append only, ~10s). |
-| `strategies/audit_dataset.py` | Data-integrity + signal-correctness audit. RUN BEFORE trusting any aggregation. Recomputes every v4 signal independently (12/12 pass on every run). |
+| `strategies/audit_dataset.py` | Data-integrity + signal-correctness audit. RUN BEFORE trusting any aggregation. Recomputes every v4 signal independently (35/35 pass on every run). |
 | `strategies/macro_backtest_v4.py` | Multi-signal composite backtest 2017-2026 (the primary analysis tool). |
 | `strategies/macro_backtest_deep.py` | 200d-MA filter on full 2011-2026 history (deep-window edge). |
 | `strategies/dd_protection_sweep.py` | Drawdown-breaker layer sweep (MA x DD-% breakers). |
@@ -95,7 +95,7 @@ system. There is NO cron/schedule - refresh happens only when asked:
 cd ~/projects/crypto-macro-analysis
 ./.venv/bin/python strategies/macro_regime_v3.py       # BTC engine -> verdict to stdout
 ./.venv/bin/python strategies/eth_macro_regime.py     # ETH engine -> verdict to stdout
-./.venv/bin/python strategies/audit_dataset.py         # signal checks (12/12 pass)
+./.venv/bin/python strategies/audit_dataset.py         # signal checks (35/35 pass)
 ./.venv/bin/python strategies/macro_backtest_v4.py     # composite backtest -> stdout
 ./.venv/bin/python strategies/eth_macro_backtest.py   # ETH backtest -> stdout
 ./.venv/bin/python strategies/macro_backtest_deep.py   # deep-history backtest -> stdout
