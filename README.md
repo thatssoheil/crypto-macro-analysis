@@ -125,9 +125,9 @@ SOPR, NUPL, supply in profit - plus the 2026-09-24 flow-semantics family and US 
 flows) fetched from Glassnode's free public MCP endpoint (no key, no account, 30-day rolling
 window, merged by date into the committed CSV so the local file is the history).
 
-> **2026-09-24: Glassnode's public MCP endpoint now requires OAuth (HTTP 401 for anonymous
-> clients) - the `gn_*` charts are frozen at their last values until access is restored
-> (see SOURCES.md).**
+> **2026-09-24: Glassnode's public endpoint had a brief OAuth-only flap (about two hours,
+> mid-morning) and then recovered - the `gn_*` charts resumed the same day. Treat the
+> public access as potentially flaky (see SOURCES.md).**
 
 Each metric is stored **twice**: the live series (Glassnode's current best estimate) and its
 point-in-time twin (`*_pit`, immutable "as known then"). `strategies/onchain_confidence.py`

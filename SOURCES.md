@@ -93,12 +93,13 @@ HY/IG only date back to 2023 - the window is bounded by that.
 
 ## On-chain flow + cycle (Glassnode public MCP - keyless until 2026-09-24)
 
-> **ACCESS LOST 2026-09-24:** the endpoint now returns HTTP 401 "requires an OAuth access
-> token" for anonymous clients (it worked until ~08:00 UTC that day). All `gn_*` charts are
-> FROZEN at their last values until access is restored. Options: OAuth (Glassnode account,
-> authorization-code + PKCE; dynamic client registration exists) or an API key. A frozen
-> series older than 30 days cannot be backfilled. The daily append job fail-softs and
-> reports the failure.
+> **FLAP 2026-09-24 (resolved):** the endpoint returned HTTP 401 "requires an OAuth access
+> token" for anonymous clients for about two hours mid-morning (~08:35-10:45 UTC), then
+> recovered on its own (verified with live fetches; the same-day build merged normally).
+> Treat public access as potentially flaky: the daily append job fail-softs, reports
+> failures, and auto-resumes; a gap longer than 30 days cannot be backfilled. Fallback
+> options if a long outage recurs: OAuth (Glassnode account, authorization-code + PKCE)
+> or an API key.
 
 The public MCP endpoint (`https://mcp.glassnode.com`, JSON-RPC over HTTP) exposes the
 metric catalogue; each fetch returns **only the last 30 days**.
