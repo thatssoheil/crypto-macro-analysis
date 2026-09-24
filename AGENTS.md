@@ -47,7 +47,7 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
 | `strategies/eth_macro_backtest.py` | ETH regime backtest 2017-2026 (validates 50d/200d MA + dual filters on ETH). |
 | `strategies/btc_eth_rotation.py` | BTC<->ETH rotation engine (validated DUALM50 rule: ETH/BTC 50d MA + ETH 200d MA + VIX/SPX macro gate). Prints the live verdict, the A/B backtest with costs, and the blunt caveats. |
 | `strategies/build_macro_dataset.py` | Fetches all charts (keyless sources; FRED runs when `FRED_API_KEY` set). Slow network job - only re-run to refresh data. `--glassnode-only` is the fast path (on-chain append only, ~10s). |
-| `strategies/audit_dataset.py` | Data-integrity + signal-correctness audit. RUN BEFORE trusting any aggregation. Recomputes every v4 signal independently (35/35 pass on every run). |
+| `strategies/audit_dataset.py` | Data-integrity + signal-correctness audit. RUN BEFORE trusting any aggregation. Recomputes every v4 signal independently (all checks pass on every run). |
 | `strategies/macro_backtest_v4.py` | Multi-signal composite backtest 2017-2026 (the primary analysis tool). |
 | `strategies/macro_backtest_deep.py` | 200d-MA filter on full 2011-2026 history (deep-window edge). |
 | `strategies/dd_protection_sweep.py` | Drawdown-breaker layer sweep (MA x DD-% breakers). |
@@ -57,8 +57,9 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
 | `strategies/macro_backtest.py` | v1 backtest. |
 | `strategies/macro_backtest_v2.py` | v2 backtest (200d-MA trend filter). |
 | `strategies/build_btc_dataset.py` | Standalone BTC price builder (blockchain.info). |
+| `strategies/backfill_derivatives.py` | One-time deep backfill for the derivatives series (Deribit DVOL + Binance archive positioning/funding). Re-runnable; skips dates already present. |
 | `scripts/refresh.sh` | On-demand refresh runner: fetch latest data (charts append daily) + re-run engine + audit. Run when the user asks for an update. `--check` = status only. |
-| `data/macro_dataset/` | 85 charts, one CSV per series + `manifest.json` (source/span/rows per chart) + auto-generated README. |
+| `data/macro_dataset/` | 98 charts, one CSV per series + `manifest.json` (source/span/rows per chart) + auto-generated README. |
 | `data/macro/` | Gitignored scratch. Results are never committed - every script regenerates fresh and prints to stdout. |
 
 ## Refresh (on-demand, fetch + aggregate)
@@ -95,7 +96,7 @@ system. There is NO cron/schedule - refresh happens only when asked:
 cd ~/projects/crypto-macro-analysis
 ./.venv/bin/python strategies/macro_regime_v3.py       # BTC engine -> verdict to stdout
 ./.venv/bin/python strategies/eth_macro_regime.py     # ETH engine -> verdict to stdout
-./.venv/bin/python strategies/audit_dataset.py         # signal checks (35/35 pass)
+./.venv/bin/python strategies/audit_dataset.py         # signal checks (all pass)
 ./.venv/bin/python strategies/macro_backtest_v4.py     # composite backtest -> stdout
 ./.venv/bin/python strategies/eth_macro_backtest.py   # ETH backtest -> stdout
 ./.venv/bin/python strategies/macro_backtest_deep.py   # deep-history backtest -> stdout
@@ -169,7 +170,7 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
   the committed archive**, and never state a flow direction unless
   `strategies/onchain_confidence.py` prints CONFIRMED for it. A flow number quoted as fact
   without the gate is the exact failure this was built to prevent.
-- **Glassnode MCP (`gn_*` charts, 20 series: 5 BTC + 5 ETH, twice over as live + `_pit`) is a ROLLING
+- **Glassnode MCP (`gn_*` charts, 42 series: 21 metrics x live + `_pit`) is a ROLLING
   30-DAY WINDOW.** The free public
   endpoint returns at most the last 30 days, so these charts are written with
   `merge_csv()` (merge by date, new wins) and never overwritten. The committed CSV
@@ -178,6 +179,10 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
 - Glassnode's endpoint is Cloudflare-fronted: bare UAs get 403 "Just a moment",
   full browser headers (see `GN_HEADERS`) get 200. A Glassnode failure is
   fail-soft (WARN, not `FAILED`) so it cannot degrade the weekly refresh.
+- **2026-09-24: the endpoint briefly required OAuth (`401 "This server requires an
+  OAuth access token"`) for about 2 hours mid-morning, then recovered on its own.**
+  Treat public access as potentially flaky - the fail-soft + stale-chart check cover
+  outages; a gap longer than 30 days cannot be backfilled.
 
 ## Simulation pitfalls
 
@@ -200,9 +205,9 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
 ## Current state (context for agents)
 
 - **No stored verdict.** Run `bash scripts/refresh.sh` for the current read;
-  the engine prints it to stdout. Qualitative context (2026-08): the macro
-  layer reads risk-on (M2 expanding, Fed BS growing, HY tight, curve steep,
-  VIX calm) while BTC still sits below its 200d MA - "fuel present, ignition
-  not yet." The trend filter has been in cash since the 2025-11-03 cross below.
+  the engine prints it to stdout. Qualitative context (2026-09-24): Phase 1
+  risk-on (engine score positive); BTC crossed back above its 200d MA on
+  2026-08-19 and has stayed above - the trend filter is IN the market again
+  (it was in cash 2025-11-03 through 2026-08-19).
 - Open items: gem-basket layer (regime filter on an
   alt basket); per-protocol usage data (DAU/fees) is paywalled (Artemis/TokenTerminal).
