@@ -1,6 +1,6 @@
 # Data Sources
 
-Every series in `data/macro_dataset/` (88 charts) and where it comes from.
+Every series in `data/macro_dataset/` (98 charts) and where it comes from.
 All sources are keyless unless marked. Re-fetch with `bash scripts/refresh.sh`
 or `python strategies/build_macro_dataset.py`.
 
@@ -183,6 +183,27 @@ Three naming eras are stitched into one series (verified 2026-09-24): 2010-01..2
 `close_today_bal` is null - the closing value sits in `open_today_bal` (verified against
 the $957B figure). Values are USD millions, stored as served.
 
+## Derivatives (Deribit + Binance public archive) - added 2026-09-24
+
+Replaces the planned Glassnode derivatives batch (the public MCP went OAuth-only
+mid-day 2026-09-24). All keyless; these sources have no PIT twins.
+
+| Chart | Source | What it shows |
+|-------|--------|---------------|
+| `dvol_btc` / `dvol_eth` | Deribit public API `get_volatility_index_data` | DVOL daily close (options-implied 30d vol index, points). Fetched+merged each run. |
+| `bn_oi_btc` / `bn_oi_eth` | Binance archive `data.binance.vision` daily metrics zips | USD-M perp open interest (coins), 23:45 UTC snapshot. Append-only: the builder fetches missing days (3-day overlap, max 60/run). |
+| `bn_lsr_btc` / `bn_lsr_eth` | same | Top-trader long/short ratio (accounts). >1 = top traders net long. |
+| `bn_taker_btc` / `bn_taker_eth` | same | Taker buy/sell volume ratio. >1 = aggressive buying. |
+| `bn_funding_btc` / `bn_funding_eth` | Binance archive monthly fundingRate zips | Daily SUM of the 8h funding rates (fraction/day). ~1 month lag (monthly files only). |
+
+Deep history: `strategies/backfill_derivatives.py` (one-time; metrics from 2020-09 BTC /
+2021-12 ETH; funding from 2020-01; DVOL from launch). The builder appends recent days -
+the committed CSVs are the history. Notes: `api.binance.com` is geo-blocked from this
+machine but the `data.binance.vision` archive is NOT (different host); old metrics files
+(2020) have a different granularity but the same columns. Source gaps (verified
+2026-09-24): top-trader L/S has no values 2021-12-30 through mid-Dec 2022 (empty fields
+in the archive); the taker ratio has none 2021-12-30 through early May 2022.
+
 ## What is NOT covered (known gaps)
 
 - Per-protocol usage (DAU/DAA, fees, revenue, txns) - paywalled: Artemis and
@@ -194,7 +215,7 @@ the $957B figure). Values are USD millions, stored as served.
 ## Refreshing
 
 ```bash
-bash scripts/refresh.sh          # fetch all 88 charts + engine + audit + on-chain gate
+bash scripts/refresh.sh          # fetch all 98 charts + engine + audit + on-chain gate
 bash scripts/refresh.sh --check  # status only
 ```
 

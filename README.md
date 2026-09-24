@@ -20,13 +20,16 @@ current numbers; docs never hardcode them (they would go stale).
 
 ## What this repo gives you
 
-- **A complete, locally-stored macro + crypto dataset** (88 charts, CSV, one file per series)
+- **A complete, locally-stored macro + crypto dataset** (98 charts, CSV, one file per series)
   covering money supply, rates, inflation, dollar, risk appetite, on-chain flow, and sentiment.
 - **An on-chain layer** (keyless Glassnode MCP): exchange flow, exchange balances, SOPR, NUPL and
   supply-in-profit for BTC and ETH, plus a flow-semantics family (hodler net position change,
   net realized P/L, adjusted SOPR, whale flows, reshuffling) and US spot ETF net flows - each
   stored twice, live and point-in-time, and checked against each other on every run (see
   "On-chain layer" below).
+- **A derivatives layer** (keyless Deribit + Binance archive): DVOL, perp open interest,
+  top-trader long/short ratio, taker flow, and funding for BTC and ETH (see "Derivatives" in
+  SOURCES.md).
 - **A regime engine** that scores the current macro environment into a
   **HOLD / CASH / BUY-the-dip** phase, using 14 weighted signals across 4 causal groups.
 - **Backtest + audit scripts** proving (and checking) every claim with real data.
@@ -91,13 +94,14 @@ Automation (owner-approved; runs on the owner's Hermes default profile since the
 
 The repo itself stays schedule-free - no cron in repo code.
 
-## The dataset (data/macro_dataset/, 88 charts)
+## The dataset (data/macro_dataset/, 98 charts)
 
 | Group | Series | Source | Span |
 |-------|--------|--------|------|
 | **Crypto price** | BTCUSD daily + hourly, ETHUSD daily | Bitstamp | 2011+ |
 | **On-chain** | hash-rate, difficulty, active addresses, transactions, market-cap, total supply | blockchain.info | 2009+ |
 | **On-chain flow** | exchange netflow, exchange balance, SOPR, NUPL, supply in profit, hodler NPC, net realized P/L, adjusted SOPR, whale flows, reshuffling, US spot ETF net flows (BTC + ETH where served, live + point-in-time) | Glassnode MCP (keyless) | 30d rolling, accrues locally |
+| **Derivatives** | DVOL, perp open interest, top-trader L/S ratio, taker ratio, funding (BTC + ETH) | Deribit / Binance archive | 2020+ |
 | **Sentiment** | Fear & Greed index | alternative.me | 2018+ |
 | **Crypto liquidity** | stablecoin total supply (aggregate USDT/USDC/DAI) | DefiLlama | 2017+ |
 | **Dollar/FX** | DXY, EURUSD, USDJPY, USDCNY | Yahoo / ECB | 1999+ |
@@ -184,7 +188,7 @@ Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 ```
 crypto-macro-analysis/
   strategies/
-    build_macro_dataset.py   # fetch all 88 charts (keyless + FRED when key set);
+    build_macro_dataset.py   # fetch all 98 charts (keyless + FRED when key set);
                              #   --glassnode-only = fast on-chain append
     onchain_confidence.py    # live vs point-in-time gate for the on-chain charts
     macro_regime_v3.py       # the live BTC regime engine (14 signals, 4 causal groups)
@@ -201,7 +205,7 @@ crypto-macro-analysis/
     macro_backtest_v2.py     # v2 backtest (200d-MA filter)
     build_btc_dataset.py     # standalone BTC price builder (blockchain.info)
   data/
-    macro_dataset/           # 88 charts, one CSV per series (+ manifest.json, README.md)
+    macro_dataset/           # 98 charts, one CSV per series (+ manifest.json, README.md)
   scripts/
     refresh.sh               # on-demand fetch + engine + audit (stateless)
   .env.example               # copy to .env and fill in FRED_API_KEY
@@ -218,7 +222,7 @@ Note: a fresh `git clone` deletes `.env` (gitignored) - restore the key after cl
 
 ## Status / Todo
 
-- [x] Dataset (88 charts) + manifest + audit
+- [x] Dataset (98 charts) + manifest + audit
 - [x] Regime engine v4 (14 signals, FRED backbone)
 - [x] DD-protection sweep (breaker layers)
 - [x] Multi-signal backtest vs 2017-2026 (v4 composite: does NOT beat MA filter; hysteresis helps DD)
@@ -228,7 +232,7 @@ Note: a fresh `git clone` deletes `.env` (gitignored) - restore the key after cl
       confidence gating and a daily append job
 - [x] Flow-semantics family + US spot ETF net flows (source-hunt batch 1; gate + audit extended)
 - [x] Liquidity plumbing: RRP + TGA weekly + daily (source-hunt batch 3)
-- [ ] Derivatives family (DVOL, skew, funding, CME OI) - blocked: Glassnode MCP now requires OAuth (2026-09-24)
+- [x] Derivatives layer (keyless: Deribit DVOL + Binance archive OI/L-S/taker/funding; skew + liquidations dropped - no keyless source)
 - [ ] Gem-basket layer: regime filter applied to an altcoin basket
 
 ## License

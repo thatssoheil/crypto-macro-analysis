@@ -39,6 +39,10 @@ for name in charts:
         # RRP operations were sparse before the facility went daily (2013-14);
         # judge only the dense era - zero gaps there since.
         gaps = gaps[gaps.index >= pd.Timestamp("2014-01-01", tz="UTC")]
+    if name in ("bn_lsr_btc", "bn_lsr_eth", "bn_taker_btc", "bn_taker_eth"):
+        # Binance's archive has empty top-trader/taker fields for much of 2022
+        # (source-side, documented in SOURCES.md); judge the clean era only.
+        gaps = gaps[gaps.index >= pd.Timestamp("2023-01-01", tz="UTC")]
     big_gaps = (gaps > allowed).sum() if len(gaps) else 0
     # 2. duplicate timestamps
     dups = idx.duplicated().sum()
@@ -57,7 +61,9 @@ for name in charts:
                       "gn_net_realized_pl", "gn_net_realized_pl_pit",
                       "gn_net_realized_pl_eth", "gn_net_realized_pl_eth_pit",
                       "gn_etf_flows_net_btc", "gn_etf_flows_net_btc_pit",
-                      "gn_etf_flows_net_eth", "gn_etf_flows_net_eth_pit")
+                      "gn_etf_flows_net_eth", "gn_etf_flows_net_eth_pit",
+                      # 2026-09-24 derivatives: funding is signed
+                      "bn_funding_btc", "bn_funding_eth")
     vals = df.select_dtypes(include=[np.number])
     negs = int((vals < 0).sum().sum()) if not vals.empty else 0
     neg_flag = negs and not neg_ok
@@ -198,6 +204,17 @@ _EXTRA = [
     ("fred_rrp",               lambda v: 0 <= v < 3e6,        "{:,.3f}"),
     ("fred_tga",               lambda v: 0 < v < 3e6,         "{:,.0f}"),
     ("tga_daily",              lambda v: 0 < v < 3e6,         "{:,.0f}"),
+    # 2026-09-24 derivatives batch (Deribit DVOL + Binance archive)
+    ("dvol_btc",               lambda v: 5 < v < 300,         "{:.1f}"),
+    ("dvol_eth",               lambda v: 5 < v < 300,         "{:.1f}"),
+    ("bn_oi_btc",              lambda v: 0 < v < 2_000_000,   "{:,.0f}"),
+    ("bn_oi_eth",              lambda v: 0 < v < 50_000_000,  "{:,.0f}"),
+    ("bn_lsr_btc",             lambda v: 0.1 < v < 10,        "{:.3f}"),
+    ("bn_lsr_eth",             lambda v: 0.1 < v < 10,        "{:.3f}"),
+    ("bn_taker_btc",           lambda v: 0.1 < v < 10,        "{:.3f}"),
+    ("bn_taker_eth",           lambda v: 0.1 < v < 10,        "{:.3f}"),
+    ("bn_funding_btc",         lambda v: -0.01 < v < 0.01,    "{:.6f}"),
+    ("bn_funding_eth",         lambda v: -0.01 < v < 0.01,    "{:.6f}"),
 ]
 for _n, _band, _fmt in _EXTRA:
     _d = load(_n)

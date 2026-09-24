@@ -4,8 +4,8 @@ MACRO + CRYPTO MASTER DATASET BUILDER
 All keyless sources verified 2026-08-03. FRED runs when FRED_API_KEY env is set.
 Output: data/macro_dataset/<name>.csv + manifest.json + README.md
 """
-import requests, json, time, csv, os, sys
-from datetime import datetime, timezone
+import requests, json, time, csv, os, sys, io, zipfile
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -446,6 +446,131 @@ if _ok and _tga:
              "Treasury FiscalData DTS operating cash balance (TGA, USD millions)")
 else:
     FAILED.append("tga_daily")
+
+# ========== 10. DERIVATIVES: Deribit DVOL + Binance archive positioning ==========
+# Keyless pair (source-hunt batch 2b, added 2026-09-24). Replaces the planned
+# Glassnode derivatives batch (the public MCP went OAuth-only mid-day).
+#   - Deribit public API: DVOL daily closes (BTC/ETH). We fetch the last ~1000
+#     days and merge (the local file is the long history).
+#   - Binance USD-M daily metrics zips (data.binance.vision, append-only archive):
+#     perp open interest, top-trader long/short ratio, taker buy/sell ratio.
+#     Fetch only missing days (3-day overlap, bounded to 60/run) and merge.
+#   - Binance monthly fundingRate zips: daily SUMS of the 8h rates (~1 month lag -
+#     the current month's file lands after month end).
+# Deep history: strategies/backfill_derivatives.py (one-time). Committed CSVs = history.
+print("== Derivatives: Deribit DVOL ==")
+_DERIBIT = "https://www.deribit.com/api/v2/public/get_volatility_index_data"
+_dvol_start = int((datetime.now(timezone.utc) - timedelta(days=1000)).timestamp() * 1000)
+for _cur, _name in (("BTC", "dvol_btc"), ("ETH", "dvol_eth")):
+    try:
+        r = get(f"{_DERIBIT}?currency={_cur}&start_timestamp={_dvol_start}&end_timestamp={int(time.time()*1000)}&resolution=1D", tries=2)
+        pts = ((r.json().get("result") or {}).get("data") or []) if r else []
+        rows = [[datetime.fromtimestamp(p[0] / 1000, tz=timezone.utc).strftime("%Y-%m-%d"), p[4]] for p in pts]
+        if rows:
+            merge_csv(_name, rows, ["date", "value"], "Deribit DVOL (daily close)")
+        else:
+            FAILED.append(_name)
+    except Exception as e:
+        FAILED.append(_name)
+        print(f"  WARN {_name}: {type(e).__name__}")
+
+print("== Derivatives: Binance perp positioning (daily archive) ==")
+_BZ = "https://data.binance.vision"
+_METRIC_COLS = {"sum_open_interest": "oi",
+                "sum_toptrader_long_short_ratio": "lsr",
+                "sum_taker_long_short_vol_ratio": "taker"}
+_METRIC_ORDER = ["create_time", "symbol", "sum_open_interest", "sum_open_interest_value",
+                 "count_toptrader_long_short_ratio", "sum_toptrader_long_short_ratio",
+                 "count_long_short_ratio", "sum_taker_long_short_vol_ratio"]
+
+def _last_csv_date(name):
+    p = OUT / f"{name}.csv"
+    if not p.exists():
+        return None
+    with open(p, newline="") as f:
+        rows = [r for r in csv.reader(f) if r and r[0] and r[0] != "date"]
+    return rows[-1][0] if rows else None
+
+for _sym in ("BTCUSDT", "ETHUSDT"):
+    _asset = _sym[:3].lower()
+    _have = [_last_csv_date(f"bn_{_suf}_{_asset}") for _suf in _METRIC_COLS.values()]
+    _have = [d for d in _have if d]
+    if _have:
+        _d = datetime.strptime(max(_have), "%Y-%m-%d").date() - timedelta(days=3)  # overlap
+    else:
+        _d = date.today() - timedelta(days=30)
+    _d = max(_d, date.today() - timedelta(days=60))
+    _end = date.today()
+    _acc = {s: [] for s in _METRIC_COLS.values()}
+    _fetched = 0
+    while _d < _end and _fetched < 60:
+        _ds = _d.isoformat()
+        try:
+            r = get(f"{_BZ}/data/futures/um/daily/metrics/{_sym}/{_sym}-metrics-{_ds}.zip", tries=2)
+            if r is not None:
+                z = zipfile.ZipFile(io.BytesIO(r.content))
+                _lines = [l for l in z.read(z.namelist()[0]).decode().splitlines() if l.strip()]
+                if _lines and _lines[0].startswith("create_time"):
+                    _idx = {h: i for i, h in enumerate(_lines[0].split(","))}
+                    _rows = _lines[1:]
+                else:
+                    _idx = {h: i for i, h in enumerate(_METRIC_ORDER)}
+                    _rows = _lines
+                _lastrow = _rows[-1].split(",")
+                for _col, _suf in _METRIC_COLS.items():
+                    try:
+                        _acc[_suf].append([_ds, float(_lastrow[_idx[_col]])])
+                    except (ValueError, IndexError, KeyError):
+                        pass
+                _fetched += 1
+        except Exception:
+            pass
+        _d += timedelta(days=1)
+        time.sleep(0.05)
+    for _suf in _METRIC_COLS.values():
+        _name = f"bn_{_suf}_{_asset}"
+        if _acc[_suf]:
+            merge_csv(_name, _acc[_suf], ["date", "value"], f"Binance USD-M daily metrics ({_sym})")
+        else:
+            FAILED.append(_name)
+
+print("== Derivatives: Binance funding (monthly archive) ==")
+_months = []
+_m = date.today().replace(day=1)
+for _ in range(2):
+    _m = (_m - timedelta(days=1)).replace(day=1)
+    _months.append(_m)
+for _sym in ("BTCUSDT", "ETHUSDT"):
+    _asset = _sym[:3].lower()
+    _acc = []
+    for _m in _months:
+        _ms = f"{_m.year:04d}-{_m.month:02d}"
+        try:
+            r = get(f"{_BZ}/data/futures/um/monthly/fundingRate/{_sym}/{_sym}-fundingRate-{_ms}.zip", tries=2)
+            if r is not None:
+                z = zipfile.ZipFile(io.BytesIO(r.content))
+                _lines = [l for l in z.read(z.namelist()[0]).decode().splitlines() if l.strip()]
+                if _lines and _lines[0].startswith("calc_time"):
+                    _idx = {h: i for i, h in enumerate(_lines[0].split(","))}
+                    _rows = _lines[1:]
+                else:
+                    _idx = {h: i for i, h in enumerate(["calc_time", "funding_interval_hours", "last_funding_rate"])}
+                    _rows = _lines
+                _sums = {}
+                for _l in _rows:
+                    _parts = _l.split(",")
+                    # calc_time is UNIX MILLISECONDS (not a date string)
+                    _day = datetime.fromtimestamp(int(_parts[_idx["calc_time"]]) / 1000,
+                                                 tz=timezone.utc).strftime("%Y-%m-%d")
+                    _sums[_day] = _sums.get(_day, 0.0) + float(_parts[_idx["last_funding_rate"]])
+                _acc += [[k, v] for k, v in _sums.items()]
+        except Exception:
+            pass
+        time.sleep(0.05)
+    if _acc:
+        merge_csv(f"bn_funding_{_asset}", _acc, ["date", "value"], f"Binance monthly fundingRate ({_sym}, daily sums)")
+    else:
+        FAILED.append(f"bn_funding_{_asset}")
 
 # ========== Manifest + README ==========
 write_index()
