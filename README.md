@@ -20,7 +20,7 @@ current numbers; docs never hardcode them (they would go stale).
 
 ## What this repo gives you
 
-- **A complete, locally-stored macro + crypto dataset** (85 charts, CSV, one file per series)
+- **A complete, locally-stored macro + crypto dataset** (88 charts, CSV, one file per series)
   covering money supply, rates, inflation, dollar, risk appetite, on-chain flow, and sentiment.
 - **An on-chain layer** (keyless Glassnode MCP): exchange flow, exchange balances, SOPR, NUPL and
   supply-in-profit for BTC and ETH, plus a flow-semantics family (hodler net position change,
@@ -91,7 +91,7 @@ Automation (owner-approved; runs on the owner's Hermes default profile since the
 
 The repo itself stays schedule-free - no cron in repo code.
 
-## The dataset (data/macro_dataset/, 85 charts)
+## The dataset (data/macro_dataset/, 88 charts)
 
 | Group | Series | Source | Span |
 |-------|--------|--------|------|
@@ -102,7 +102,7 @@ The repo itself stays schedule-free - no cron in repo code.
 | **Crypto liquidity** | stablecoin total supply (aggregate USDT/USDC/DAI) | DefiLlama | 2017+ |
 | **Dollar/FX** | DXY, EURUSD, USDJPY, USDCNY | Yahoo / ECB | 1999+ |
 | **Rates & curve** | 3m, 2y, 10y, 30y yields, 10y real yield, breakeven | Yahoo / FRED | 1962+ |
-| **Money & Fed** | M2 money supply, Fed balance sheet, effective fed funds | FRED | 1954+ |
+| **Money & Fed** | M2 money supply, Fed balance sheet, effective fed funds, RRP (daily), TGA (weekly + daily) | FRED / Treasury FiscalData | 1954+ |
 | **Inflation** | CPI, PCE | FRED | 1947+ |
 | **Labor** | unemployment, jobless claims, nonfarm payrolls | FRED | 1939+ |
 | **Risk appetite** | VIX, S&P 500, Nasdaq, Russell 2000, HY/IG credit spreads | Yahoo / FRED | 2011+ |
@@ -120,6 +120,10 @@ Twenty-one metric series (the core five for BTC and ETH - exchange netflow, exch
 SOPR, NUPL, supply in profit - plus the 2026-09-24 flow-semantics family and US spot ETF net
 flows) fetched from Glassnode's free public MCP endpoint (no key, no account, 30-day rolling
 window, merged by date into the committed CSV so the local file is the history).
+
+> **2026-09-24: Glassnode's public MCP endpoint now requires OAuth (HTTP 401 for anonymous
+> clients) - the `gn_*` charts are frozen at their last values until access is restored
+> (see SOURCES.md).**
 
 Each metric is stored **twice**: the live series (Glassnode's current best estimate) and its
 point-in-time twin (`*_pit`, immutable "as known then"). `strategies/onchain_confidence.py`
@@ -180,7 +184,7 @@ Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 ```
 crypto-macro-analysis/
   strategies/
-    build_macro_dataset.py   # fetch all 85 charts (keyless + FRED when key set);
+    build_macro_dataset.py   # fetch all 88 charts (keyless + FRED when key set);
                              #   --glassnode-only = fast on-chain append
     onchain_confidence.py    # live vs point-in-time gate for the on-chain charts
     macro_regime_v3.py       # the live BTC regime engine (14 signals, 4 causal groups)
@@ -197,7 +201,7 @@ crypto-macro-analysis/
     macro_backtest_v2.py     # v2 backtest (200d-MA filter)
     build_btc_dataset.py     # standalone BTC price builder (blockchain.info)
   data/
-    macro_dataset/           # 85 charts, one CSV per series (+ manifest.json, README.md)
+    macro_dataset/           # 88 charts, one CSV per series (+ manifest.json, README.md)
   scripts/
     refresh.sh               # on-demand fetch + engine + audit (stateless)
   .env.example               # copy to .env and fill in FRED_API_KEY
@@ -209,12 +213,12 @@ All results print to stdout; `data/macro/` is gitignored scratch (never committe
 ## Secrets
 
 API keys go in `.env` (gitignored). `.env.example` lists the names.
-`FRED_API_KEY` is optional — keyless sources cover everything except the 15 FRED series.
+`FRED_API_KEY` is optional — keyless sources cover everything except the 17 FRED series.
 Note: a fresh `git clone` deletes `.env` (gitignored) - restore the key after cloning.
 
 ## Status / Todo
 
-- [x] Dataset (85 charts) + manifest + audit
+- [x] Dataset (88 charts) + manifest + audit
 - [x] Regime engine v4 (14 signals, FRED backbone)
 - [x] DD-protection sweep (breaker layers)
 - [x] Multi-signal backtest vs 2017-2026 (v4 composite: does NOT beat MA filter; hysteresis helps DD)
@@ -223,7 +227,8 @@ Note: a fresh `git clone` deletes `.env` (gitignored) - restore the key after cl
 - [x] On-chain flow layer (keyless Glassnode MCP, BTC + ETH) with live-vs-point-in-time
       confidence gating and a daily append job
 - [x] Flow-semantics family + US spot ETF net flows (source-hunt batch 1; gate + audit extended)
-- [ ] Derivatives family (DVOL, skew, funding, CME OI) + RRP/TGA (source-hunt batches 2-3)
+- [x] Liquidity plumbing: RRP + TGA weekly + daily (source-hunt batch 3)
+- [ ] Derivatives family (DVOL, skew, funding, CME OI) - blocked: Glassnode MCP now requires OAuth (2026-09-24)
 - [ ] Gem-basket layer: regime filter applied to an altcoin basket
 
 ## License

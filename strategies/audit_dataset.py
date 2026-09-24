@@ -35,6 +35,10 @@ for name in charts:
     # 1. gaps - monthly series naturally have ~30d gaps; daily should have <10d
     gaps = (idx.to_series().diff().dt.days).dropna()
     allowed = 45 if name in MONTHLY else 10
+    if name == "fred_rrp":
+        # RRP operations were sparse before the facility went daily (2013-14);
+        # judge only the dense era - zero gaps there since.
+        gaps = gaps[gaps.index >= pd.Timestamp("2014-01-01", tz="UTC")]
     big_gaps = (gaps > allowed).sum() if len(gaps) else 0
     # 2. duplicate timestamps
     dups = idx.duplicated().sum()
@@ -190,6 +194,10 @@ _EXTRA = [
     ("gn_reshuffling_ratio",   lambda v: 0 <= v <= 1,         "{:.3f}"),
     ("gn_etf_flows_net_btc",   lambda v: abs(v) < 1_000_000,  "{:+,.0f}"),
     ("gn_etf_flows_net_eth",   lambda v: abs(v) < 20_000_000, "{:+,.0f}"),
+    # 2026-09-24 liquidity batch (FRED/FiscalData - loose unit-agnostic floors)
+    ("fred_rrp",               lambda v: 0 <= v < 3e6,        "{:,.3f}"),
+    ("fred_tga",               lambda v: 0 < v < 3e6,         "{:,.0f}"),
+    ("tga_daily",              lambda v: 0 < v < 3e6,         "{:,.0f}"),
 ]
 for _n, _band, _fmt in _EXTRA:
     _d = load(_n)

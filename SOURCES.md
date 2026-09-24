@@ -1,6 +1,6 @@
 # Data Sources
 
-Every series in `data/macro_dataset/` (85 charts) and where it comes from.
+Every series in `data/macro_dataset/` (88 charts) and where it comes from.
 All sources are keyless unless marked. Re-fetch with `bash scripts/refresh.sh`
 or `python strategies/build_macro_dataset.py`.
 
@@ -85,14 +85,23 @@ Free key at `fredaccount.stlouisfed.org/register`; API docs at
 | `fred_nonfarm_payrolls` | PAYEMS | Monthly | 1939+ | Nonfarm payrolls. |
 | `fred_hy_spread` | BAMLH0A0HYM2 | Daily | 2023-08+ | HY credit spread. Only back to 2023 (series discontinued). |
 | `fred_ig_spread` | BAMLC0A0CM | Daily | 2023-08+ | IG credit spread. Same 2023 floor. |
+| `fred_rrp` | RRPONTSYD | Daily | 2003+ | Fed reverse-repo pool - the liquidity buffer that drains first (added 2026-09-24; USD billions as served). |
+| `fred_tga` | WTREGEN | Weekly | 2002+ | Treasury General Account, weekly; the daily counterpart is `tga_daily` below (added 2026-09-24; USD millions as served). |
 
 **Gotchas:** ISM series `NAPM`/`NAPMN` are discontinued - skip them (HTTP 400).
 HY/IG only date back to 2023 - the window is bounded by that.
 
-## On-chain flow + cycle (Glassnode public MCP - keyless)
+## On-chain flow + cycle (Glassnode public MCP - keyless until 2026-09-24)
 
-The free public MCP endpoint (`https://mcp.glassnode.com`, JSON-RPC over HTTP, no key, no
-account) exposes the metric catalogue; each fetch returns **only the last 30 days**.
+> **ACCESS LOST 2026-09-24:** the endpoint now returns HTTP 401 "requires an OAuth access
+> token" for anonymous clients (it worked until ~08:00 UTC that day). All `gn_*` charts are
+> FROZEN at their last values until access is restored. Options: OAuth (Glassnode account,
+> authorization-code + PKCE; dynamic client registration exists) or an API key. A frozen
+> series older than 30 days cannot be backfilled. The daily append job fail-softs and
+> reports the failure.
+
+The public MCP endpoint (`https://mcp.glassnode.com`, JSON-RPC over HTTP) exposes the
+metric catalogue; each fetch returns **only the last 30 days**.
 
 | Chart | Metric endpoint | What it shows |
 |-------|-----------------|---------------|
@@ -162,6 +171,18 @@ SOPR 155d, and ETF net flows (BTC+ETH) all CONFIRMED. `gn_whales_to_exchanges` U
 so use the PIT twin for any claim on it. ETH twins exist only where the endpoint serves ETH
 (no adjusted/155d/whale twins for ETH).
 
+## Treasury FiscalData - daily TGA (added 2026-09-24)
+
+Keyless: `api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance`.
+Daily Treasury General Account balance - the daily counterpart of FRED's weekly `fred_tga`.
+With `fred_rrp` it enables the net-liquidity read (**Fed BS - TGA - RRP**).
+
+Three naming eras are stitched into one series (verified 2026-09-24): 2010-01..2021-09
+"Federal Reserve Account" / 2021-10..2022-04 "Treasury General Account (TGA)" /
+2022-04.. "Treasury General Account (TGA) Closing Balance". Quirk: in the modern rows
+`close_today_bal` is null - the closing value sits in `open_today_bal` (verified against
+the $957B figure). Values are USD millions, stored as served.
+
 ## What is NOT covered (known gaps)
 
 - Per-protocol usage (DAU/DAA, fees, revenue, txns) - paywalled: Artemis and
@@ -173,7 +194,7 @@ so use the PIT twin for any claim on it. ETH twins exist only where the endpoint
 ## Refreshing
 
 ```bash
-bash scripts/refresh.sh          # fetch all 85 charts + engine + audit + on-chain gate
+bash scripts/refresh.sh          # fetch all 88 charts + engine + audit + on-chain gate
 bash scripts/refresh.sh --check  # status only
 ```
 

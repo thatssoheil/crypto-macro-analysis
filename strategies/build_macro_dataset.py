@@ -88,7 +88,7 @@ def write_index():
               "| Chart | Rows | Span | Source |", "|---|---|---|---|"]
     for k, v in manifest["charts"].items():
         readme.append(f"| {k} | {v['rows']} | {v['span']} | {v['source']} |")
-    readme += ["", "FRED series (15) added when FRED_API_KEY env is set.",
+    readme += ["", "FRED series (17) added when FRED_API_KEY env is set.",
                "On-chain `gn_*` charts: keyless Glassnode MCP, 30d window per fetch, merged by date",
                "(the local file is the history - run daily to accumulate; `--glassnode-only` is the fast path).",
                "Update cadence: re-run script; charts overwrite in place (gn_* merge in place)."]
@@ -376,7 +376,12 @@ FRED_SERIES = {"M2SL": "us_m2", "WALCL": "fed_balance_sheet", "DFF": "fed_funds_
                "T10YIE": "breakeven10y", "DFII10": "real_yield10y",
                "CPIAUCSL": "cpi", "PCEPI": "pce", "UNRATE": "unemployment",
                "ICSA": "jobless_claims", "PAYEMS": "nonfarm_payrolls",
-               "BAMLH0A0HYM2": "hy_spread", "BAMLC0A0CM": "ig_spread"}
+               "BAMLH0A0HYM2": "hy_spread", "BAMLC0A0CM": "ig_spread",
+               # 2026-09-24 (liquidity batch): the money-plumbing pair. RRP = the
+               # Fed's reverse-repo pool (the buffer that drains first), TGA =
+               # Treasury's cash at the Fed (a rebuild drains reserves). Enables the
+               # net-liquidity read: Fed BS - TGA - RRP (daily TGA in section 9).
+               "RRPONTSYD": "rrp", "WTREGEN": "tga"}
 # NOTE: NAPM/NAPMN (ISM mfg/nonmfg) are DISCONTINUED at FRED - they always fail, excluded.
 if FRED_KEY:
     print("== FRED ==")
@@ -389,11 +394,58 @@ if FRED_KEY:
         save_csv(f"fred_{name}", rows, ["date", "value"], f"FRED {sid}")
         time.sleep(0.5)
 else:
-    print("== FRED: SKIPPED (no FRED_API_KEY). 15 series ready when key provided: M2, Fed BS, rates, CPI, PCE, UNRATE, claims, payrolls, HY/IG spreads ==")
+    print("== FRED: SKIPPED (no FRED_API_KEY). 17 series ready when key provided: M2, Fed BS, rates, CPI, PCE, UNRATE, claims, payrolls, HY/IG spreads, RRP/TGA ==")
 
 # ========== 8. GLASSNODE on-chain (keyless public MCP, rolling 30d) ==========
 print("== Glassnode MCP on-chain (exchange flows, SOPR, NUPL, supply in profit) ==")
 fetch_glassnode()
+
+# ========== 9. TREASURY FISCALDATA: daily TGA (keyless) ==========
+# Daily counterpart of FRED's weekly WTREGEN, for the net-liquidity read
+# (Fed BS - TGA - RRP). The history has three naming eras (verified 2026-09-24):
+#   2010-01..2021-09  "Federal Reserve Account"                (close_today_bal)
+#   2021-10..2022-04  "Treasury General Account (TGA)"         (close_today_bal)
+#   2022-04..now      "Treasury General Account (TGA) Closing Balance"
+#                     (close_today_bal is null in this feed - the value sits in
+#                      open_today_bal; verified against the $957B figure)
+# Values are USD millions, stored as served.
+print("== Treasury FiscalData daily TGA ==")
+import re as _re
+_FD = ("https://api.fiscaldata.treasury.gov/services/api/fiscal_service"
+       "/v1/accounting/dts/operating_cash_balance")
+_tga_pat = _re.compile(r"^(Treasury General Account \(TGA\)( Closing Balance)?|Federal Reserve Account)$")
+def _num(x):
+    """FiscalData serves the STRING 'null' for missing values in some rows."""
+    if x in (None, "", "null"):
+        return None
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return None
+_tga, _ok = {}, True
+for _page in (1, 2, 3):
+    r = get(f"{_FD}?sort=record_date&page[size]=10000&page[number]={_page}")
+    if not r:
+        _ok = False
+        break
+    _data = r.json().get("data") or []
+    for d in _data:
+        if not _tga_pat.match(d.get("account_type", "")):
+            continue
+        v = _num(d.get("close_today_bal"))
+        if v is None:
+            v = _num(d.get("open_today_bal"))
+        if v is None:
+            continue
+        _tga[d["record_date"]] = v
+    if len(_data) < 10000:
+        break
+if _ok and _tga:
+    rows = [[d, _tga[d]] for d in sorted(_tga)]
+    save_csv("tga_daily", rows, ["date", "value"],
+             "Treasury FiscalData DTS operating cash balance (TGA, USD millions)")
+else:
+    FAILED.append("tga_daily")
 
 # ========== Manifest + README ==========
 write_index()
