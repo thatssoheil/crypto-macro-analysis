@@ -1,6 +1,6 @@
 # Data Sources
 
-Every series in `data/macro_dataset/` (63 charts) and where it comes from.
+Every series in `data/macro_dataset/` (85 charts) and where it comes from.
 All sources are keyless unless marked. Re-fetch with `bash scripts/refresh.sh`
 or `python strategies/build_macro_dataset.py`.
 
@@ -139,6 +139,29 @@ Fast append (used by the daily check, ~10s, does not touch the slow sources):
 ./.venv/bin/python strategies/onchain_confidence.py                     # live-vs-PIT gate
 ```
 
+## Flow-semantics family + US spot ETF flows (added 2026-09-24)
+
+Source-hunt batch 1: eleven more keyless metrics on the same MCP endpoint, same
+rolling-30d merge, same live + `*_pit` twins, same gate.
+
+| Chart | Metric endpoint | What it shows |
+|-------|-----------------|---------------|
+| `gn_hodler_npc_btc` / `_eth` | `/v1/metrics/indicators/hodler_net_position_change` | Long-term-holder net position change (coins/day, signed). Positive = LTH cohort adding. |
+| `gn_net_realized_pl` / `_eth` | `/v1/metrics/indicators/net_realized_profit_loss` | Net realized P/L in USD/day (signed). Who is taking profit/loss at this price. |
+| `gn_sopr_adjusted` | `/v1/metrics/indicators/sopr_adjusted` | SOPR adjusted for spent-output age - cleaner cycle read than raw SOPR. |
+| `gn_sopr_155d` | `/v1/metrics/indicators/sopr_more_155` | SOPR restricted to coins older than 155d (>1 = old coins selling at profit). |
+| `gn_whales_to_exchanges` | `/v1/metrics/transactions/transfers_volume_whales_to_exchanges_sum` | Whale -> exchange transfer volume (coins/day). Sell-side pressure precursor. |
+| `gn_exchanges_to_whales` | `/v1/metrics/transactions/transfers_volume_exchanges_to_whales_sum` | Exchange -> whale withdrawal volume (coins/day). |
+| `gn_reshuffling_ratio` | `/v1/metrics/distribution/exchange_reshuffling_ratio` | Exchange reshuffling ratio (0-1): exchange-to-exchange churn, not real flow. |
+| `gn_etf_flows_net_btc` / `_eth` | `/v1/metrics/institutions/us_spot_etf_flows_net` | US spot ETF net flows. Stored AS SERVED - the vendor does not document units; verify scale before comparing with USD headlines. |
+
+First gate run (2026-09-24): hodler NPC (BTC+ETH), net realized P/L (BTC+ETH), adjusted SOPR,
+SOPR 155d, and ETF net flows (BTC+ETH) all CONFIRMED. `gn_whales_to_exchanges` UNSTABLE
+(4.5% mean daily diff), `gn_reshuffling_ratio` UNSTABLE (4.4%), and `gn_exchanges_to_whales`
+**CONTRADICTED** (18.3% mean daily diff) - exchange/whale classification is heavily restated,
+so use the PIT twin for any claim on it. ETH twins exist only where the endpoint serves ETH
+(no adjusted/155d/whale twins for ETH).
+
 ## What is NOT covered (known gaps)
 
 - Per-protocol usage (DAU/DAA, fees, revenue, txns) - paywalled: Artemis and
@@ -150,7 +173,7 @@ Fast append (used by the daily check, ~10s, does not touch the slow sources):
 ## Refreshing
 
 ```bash
-bash scripts/refresh.sh          # fetch all 63 charts + engine + audit + on-chain gate
+bash scripts/refresh.sh          # fetch all 85 charts + engine + audit + on-chain gate
 bash scripts/refresh.sh --check  # status only
 ```
 

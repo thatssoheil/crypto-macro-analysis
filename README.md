@@ -20,11 +20,13 @@ current numbers; docs never hardcode them (they would go stale).
 
 ## What this repo gives you
 
-- **A complete, locally-stored macro + crypto dataset** (63 charts, CSV, one file per series)
+- **A complete, locally-stored macro + crypto dataset** (85 charts, CSV, one file per series)
   covering money supply, rates, inflation, dollar, risk appetite, on-chain flow, and sentiment.
 - **An on-chain layer** (keyless Glassnode MCP): exchange flow, exchange balances, SOPR, NUPL and
-  supply-in-profit for BTC and ETH - each stored twice, live and point-in-time, and checked against
-  each other on every run (see "On-chain layer" below).
+  supply-in-profit for BTC and ETH, plus a flow-semantics family (hodler net position change,
+  net realized P/L, adjusted SOPR, whale flows, reshuffling) and US spot ETF net flows - each
+  stored twice, live and point-in-time, and checked against each other on every run (see
+  "On-chain layer" below).
 - **A regime engine** that scores the current macro environment into a
   **HOLD / CASH / BUY-the-dip** phase, using 14 weighted signals across 4 causal groups.
 - **Backtest + audit scripts** proving (and checking) every claim with real data.
@@ -89,13 +91,13 @@ Automation (owner-approved; runs on the owner's Hermes default profile since the
 
 The repo itself stays schedule-free - no cron in repo code.
 
-## The dataset (data/macro_dataset/, 63 charts)
+## The dataset (data/macro_dataset/, 85 charts)
 
 | Group | Series | Source | Span |
 |-------|--------|--------|------|
 | **Crypto price** | BTCUSD daily + hourly, ETHUSD daily | Bitstamp | 2011+ |
 | **On-chain** | hash-rate, difficulty, active addresses, transactions, market-cap, total supply | blockchain.info | 2009+ |
-| **On-chain flow** | exchange netflow, exchange balance, SOPR, NUPL, supply in profit (BTC + ETH, live + point-in-time) | Glassnode MCP (keyless) | 30d rolling, accrues locally |
+| **On-chain flow** | exchange netflow, exchange balance, SOPR, NUPL, supply in profit, hodler NPC, net realized P/L, adjusted SOPR, whale flows, reshuffling, US spot ETF net flows (BTC + ETH where served, live + point-in-time) | Glassnode MCP (keyless) | 30d rolling, accrues locally |
 | **Sentiment** | Fear & Greed index | alternative.me | 2018+ |
 | **Crypto liquidity** | stablecoin total supply (aggregate USDT/USDC/DAI) | DefiLlama | 2017+ |
 | **Dollar/FX** | DXY, EURUSD, USDJPY, USDCNY | Yahoo / ECB | 1999+ |
@@ -114,8 +116,9 @@ source + span + row-count recorded in `manifest.json`.
 
 ## On-chain layer (keyless, and checked for its own reliability)
 
-Five metrics for BTC and for ETH - exchange netflow, exchange balance, SOPR, NUPL, supply in
-profit - fetched from Glassnode's free public MCP endpoint (no key, no account, 30-day rolling
+Twenty-one metric series (the core five for BTC and ETH - exchange netflow, exchange balance,
+SOPR, NUPL, supply in profit - plus the 2026-09-24 flow-semantics family and US spot ETF net
+flows) fetched from Glassnode's free public MCP endpoint (no key, no account, 30-day rolling
 window, merged by date into the committed CSV so the local file is the history).
 
 Each metric is stored **twice**: the live series (Glassnode's current best estimate) and its
@@ -123,9 +126,11 @@ point-in-time twin (`*_pit`, immutable "as known then"). `strategies/onchain_con
 compares the pair on every refresh and prints a verdict per metric:
 
 ```
-[CONTRADICTED] BTC netflow   live 7d +4,904 | pit 7d -19,494 | sign agreement 67%
-[CONFIRMED   ] BTC exchange_bal / SOPR / NUPL / profit%   (<=0.3% apart)
-[CONFIRMED   ] ETH netflow and the other ETH pairs        (0.2% apart, 100% sign agreement)
+[UNSTABLE    ] BTC netflow          live 7d -18,647 | pit 7d -32,659 | sign agreement 71%
+[CONFIRMED   ] BTC hodler NPC       live 7d +146,457 | pit 7d +146,404 | sign agreement 100%
+[CONTRADICTED] BTC exch to whales   mean daily diff 18.3% - PIT only for claims
+...
+16 confirmed / 4 unstable / 1 contradicted on the first run after the 2026-09-24 additions
 ```
 
 Why this exists: address labelling is revised retroactively, so a flow number read today can
@@ -175,7 +180,7 @@ Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 ```
 crypto-macro-analysis/
   strategies/
-    build_macro_dataset.py   # fetch all 63 charts (keyless + FRED when key set);
+    build_macro_dataset.py   # fetch all 85 charts (keyless + FRED when key set);
                              #   --glassnode-only = fast on-chain append
     onchain_confidence.py    # live vs point-in-time gate for the on-chain charts
     macro_regime_v3.py       # the live BTC regime engine (14 signals, 4 causal groups)
@@ -192,7 +197,7 @@ crypto-macro-analysis/
     macro_backtest_v2.py     # v2 backtest (200d-MA filter)
     build_btc_dataset.py     # standalone BTC price builder (blockchain.info)
   data/
-    macro_dataset/           # 63 charts, one CSV per series (+ manifest.json, README.md)
+    macro_dataset/           # 85 charts, one CSV per series (+ manifest.json, README.md)
   scripts/
     refresh.sh               # on-demand fetch + engine + audit (stateless)
   .env.example               # copy to .env and fill in FRED_API_KEY
@@ -209,7 +214,7 @@ Note: a fresh `git clone` deletes `.env` (gitignored) - restore the key after cl
 
 ## Status / Todo
 
-- [x] Dataset (63 charts) + manifest + audit
+- [x] Dataset (85 charts) + manifest + audit
 - [x] Regime engine v4 (14 signals, FRED backbone)
 - [x] DD-protection sweep (breaker layers)
 - [x] Multi-signal backtest vs 2017-2026 (v4 composite: does NOT beat MA filter; hysteresis helps DD)
@@ -217,6 +222,8 @@ Note: a fresh `git clone` deletes `.env` (gitignored) - restore the key after cl
 - [x] Stateless results (stdout-only; nothing saved, nothing read back)
 - [x] On-chain flow layer (keyless Glassnode MCP, BTC + ETH) with live-vs-point-in-time
       confidence gating and a daily append job
+- [x] Flow-semantics family + US spot ETF net flows (source-hunt batch 1; gate + audit extended)
+- [ ] Derivatives family (DVOL, skew, funding, CME OI) + RRP/TGA (source-hunt batches 2-3)
 - [ ] Gem-basket layer: regime filter applied to an altcoin basket
 
 ## License

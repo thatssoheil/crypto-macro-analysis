@@ -58,7 +58,7 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
 | `strategies/macro_backtest_v2.py` | v2 backtest (200d-MA trend filter). |
 | `strategies/build_btc_dataset.py` | Standalone BTC price builder (blockchain.info). |
 | `scripts/refresh.sh` | On-demand refresh runner: fetch latest data (charts append daily) + re-run engine + audit. Run when the user asks for an update. `--check` = status only. |
-| `data/macro_dataset/` | 63 charts, one CSV per series + `manifest.json` (source/span/rows per chart) + auto-generated README. |
+| `data/macro_dataset/` | 85 charts, one CSV per series + `manifest.json` (source/span/rows per chart) + auto-generated README. |
 | `data/macro/` | Gitignored scratch. Results are never committed - every script regenerates fresh and prints to stdout. |
 
 ## Refresh (on-demand, fetch + aggregate)

@@ -88,7 +88,7 @@ def write_index():
               "| Chart | Rows | Span | Source |", "|---|---|---|---|"]
     for k, v in manifest["charts"].items():
         readme.append(f"| {k} | {v['rows']} | {v['span']} | {v['source']} |")
-    readme += ["", "FRED series (17) added when FRED_API_KEY env is set.",
+    readme += ["", "FRED series (15) added when FRED_API_KEY env is set.",
                "On-chain `gn_*` charts: keyless Glassnode MCP, 30d window per fetch, merged by date",
                "(the local file is the history - run daily to accumulate; `--glassnode-only` is the fast path).",
                "Update cadence: re-run script; charts overwrite in place (gn_* merge in place)."]
@@ -148,6 +148,32 @@ GN_METRICS = {
     "gn_sopr_eth_pit":              ("/v1/metrics/indicators/sopr_pit", "ETH"),
     "gn_nupl_eth_pit":              ("/v1/metrics/indicators/net_unrealized_profit_loss_pit", "ETH"),
     "gn_supply_in_profit_pct_eth_pit": ("/v1/metrics/supply/profit_relative_pit", "ETH"),
+    # 2026-09-24 source-hunt batch 1: flow-semantics context family + US spot ETF
+    # flows. Same keyless MCP + rolling-30d merge + PIT twins. Units are stored AS
+    # SERVED (SOURCES.md documents them); the confidence gate compares live vs pit
+    # of the same series, so restatement detection is unit-invariant.
+    "gn_hodler_npc_btc":            ("/v1/metrics/indicators/hodler_net_position_change", "BTC"),
+    "gn_hodler_npc_btc_pit":        ("/v1/metrics/indicators/hodler_net_position_change_pit", "BTC"),
+    "gn_hodler_npc_eth":            ("/v1/metrics/indicators/hodler_net_position_change", "ETH"),
+    "gn_hodler_npc_eth_pit":        ("/v1/metrics/indicators/hodler_net_position_change_pit", "ETH"),
+    "gn_net_realized_pl":           ("/v1/metrics/indicators/net_realized_profit_loss", "BTC"),
+    "gn_net_realized_pl_pit":       ("/v1/metrics/indicators/net_realized_profit_loss_pit", "BTC"),
+    "gn_net_realized_pl_eth":       ("/v1/metrics/indicators/net_realized_profit_loss", "ETH"),
+    "gn_net_realized_pl_eth_pit":   ("/v1/metrics/indicators/net_realized_profit_loss_pit", "ETH"),
+    "gn_sopr_adjusted":             ("/v1/metrics/indicators/sopr_adjusted", "BTC"),
+    "gn_sopr_adjusted_pit":         ("/v1/metrics/indicators/sopr_adjusted_pit", "BTC"),
+    "gn_sopr_155d":                 ("/v1/metrics/indicators/sopr_more_155", "BTC"),
+    "gn_sopr_155d_pit":             ("/v1/metrics/indicators/sopr_more_155_pit", "BTC"),
+    "gn_whales_to_exchanges":       ("/v1/metrics/transactions/transfers_volume_whales_to_exchanges_sum", "BTC"),
+    "gn_whales_to_exchanges_pit":   ("/v1/metrics/transactions/transfers_volume_whales_to_exchanges_sum_pit", "BTC"),
+    "gn_exchanges_to_whales":       ("/v1/metrics/transactions/transfers_volume_exchanges_to_whales_sum", "BTC"),
+    "gn_exchanges_to_whales_pit":   ("/v1/metrics/transactions/transfers_volume_exchanges_to_whales_sum_pit", "BTC"),
+    "gn_reshuffling_ratio":         ("/v1/metrics/distribution/exchange_reshuffling_ratio", "BTC"),
+    "gn_reshuffling_ratio_pit":     ("/v1/metrics/distribution/exchange_reshuffling_ratio_pit", "BTC"),
+    "gn_etf_flows_net_btc":         ("/v1/metrics/institutions/us_spot_etf_flows_net", "BTC"),
+    "gn_etf_flows_net_btc_pit":     ("/v1/metrics/institutions/us_spot_etf_flows_net_pit", "BTC"),
+    "gn_etf_flows_net_eth":         ("/v1/metrics/institutions/us_spot_etf_flows_net", "ETH"),
+    "gn_etf_flows_net_eth_pit":     ("/v1/metrics/institutions/us_spot_etf_flows_net_pit", "ETH"),
 }
 
 def _sse_json(text):

@@ -46,7 +46,14 @@ for name in charts:
     neg_ok = name in ("fred_real_yield10y", "us3m", "wti", "gn_exchange_netflow_btc",
                       "gn_exchange_netflow_eth", "gn_nupl", "gn_nupl_eth",
                       "gn_exchange_netflow_btc_pit", "gn_exchange_netflow_eth_pit",
-                      "gn_nupl_pit", "gn_nupl_eth_pit")
+                      "gn_nupl_pit", "gn_nupl_eth_pit",
+                      # 2026-09-24 flow-semantics + ETF additions with legit negatives
+                      "gn_hodler_npc_btc", "gn_hodler_npc_btc_pit",
+                      "gn_hodler_npc_eth", "gn_hodler_npc_eth_pit",
+                      "gn_net_realized_pl", "gn_net_realized_pl_pit",
+                      "gn_net_realized_pl_eth", "gn_net_realized_pl_eth_pit",
+                      "gn_etf_flows_net_btc", "gn_etf_flows_net_btc_pit",
+                      "gn_etf_flows_net_eth", "gn_etf_flows_net_eth_pit")
     vals = df.select_dtypes(include=[np.number])
     negs = int((vals < 0).sum().sum()) if not vals.empty else 0
     neg_flag = negs and not neg_ok
@@ -168,6 +175,28 @@ for _sym, _m in GN_CHARTS.items():
     if _nf is not None and _exb is not None:
         chk(f"gn_merge_continuity_{_s}", len(_nf) >= len(_exb) - 1 and len(_nf) > 1,
             f"{_sym}: {len(_nf)} netflow rows vs {len(_exb)} balance rows (merge kept both)")
+
+# 2026-09-24 source-hunt additions - loose last-value sanity bands (catch a bad
+# merge or a unit change loudly; sanity floors, not precision bands).
+_EXTRA = [
+    ("gn_hodler_npc_btc",      lambda v: abs(v) < 300_000,    "{:+,.0f} coins"),
+    ("gn_hodler_npc_eth",      lambda v: abs(v) < 5_000_000,  "{:+,.0f} coins"),
+    ("gn_net_realized_pl",     lambda v: abs(v) < 5e10,       "{:+,.0f} USD"),
+    ("gn_net_realized_pl_eth", lambda v: abs(v) < 5e10,       "{:+,.0f} USD"),
+    ("gn_sopr_adjusted",       lambda v: 0.5 < v < 3,         "{:.3f}"),
+    ("gn_sopr_155d",           lambda v: 0.3 < v < 6,         "{:.3f}"),
+    ("gn_whales_to_exchanges", lambda v: 0 <= v < 2_000_000,  "{:,.0f}"),
+    ("gn_exchanges_to_whales", lambda v: 0 <= v < 2_000_000,  "{:,.0f}"),
+    ("gn_reshuffling_ratio",   lambda v: 0 <= v <= 1,         "{:.3f}"),
+    ("gn_etf_flows_net_btc",   lambda v: abs(v) < 1_000_000,  "{:+,.0f}"),
+    ("gn_etf_flows_net_eth",   lambda v: abs(v) < 20_000_000, "{:+,.0f}"),
+]
+for _n, _band, _fmt in _EXTRA:
+    _d = load(_n)
+    if _d is None:
+        continue
+    _v = float(_d["value"].iloc[-1])
+    chk(_n, _band(_v), "last = " + _fmt.format(_v))
 
 print()
 fails = [c for c in checks if not c[1]]

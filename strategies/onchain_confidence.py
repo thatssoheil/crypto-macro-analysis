@@ -42,6 +42,24 @@ for asset in ("btc", "eth"):
     PAIRS[f"{asset.upper()} NUPL"] = (f"gn_nupl{sfx}", f"gn_nupl{sfx}_pit", "level")
     PAIRS[f"{asset.upper()} profit%"] = (f"gn_supply_in_profit_pct{sfx}", f"gn_supply_in_profit_pct{sfx}_pit", "level")
 
+# 2026-09-24 source-hunt batch 1 additions (flow-semantics family + US spot ETF
+# flows). "flow" = sign-agreement + 7d-sum test; "level" = delta test. The whale
+# flow columns are gross DIRECTIONS (non-negative), so a sign test is meaningless
+# for them - they use the level rule. Hodler NPC / NRPL / ETF flows are signed.
+PAIRS.update({
+    "BTC hodler npc":      ("gn_hodler_npc_btc", "gn_hodler_npc_btc_pit", "flow"),
+    "ETH hodler npc":      ("gn_hodler_npc_eth", "gn_hodler_npc_eth_pit", "flow"),
+    "BTC net realized pl": ("gn_net_realized_pl", "gn_net_realized_pl_pit", "flow"),
+    "ETH net realized pl": ("gn_net_realized_pl_eth", "gn_net_realized_pl_eth_pit", "flow"),
+    "BTC SOPR adjusted":   ("gn_sopr_adjusted", "gn_sopr_adjusted_pit", "level"),
+    "BTC SOPR 155d":       ("gn_sopr_155d", "gn_sopr_155d_pit", "level"),
+    "BTC whales to exch":  ("gn_whales_to_exchanges", "gn_whales_to_exchanges_pit", "level"),
+    "BTC exch to whales":  ("gn_exchanges_to_whales", "gn_exchanges_to_whales_pit", "level"),
+    "BTC reshuffling":     ("gn_reshuffling_ratio", "gn_reshuffling_ratio_pit", "level"),
+    "BTC ETF flows net":   ("gn_etf_flows_net_btc", "gn_etf_flows_net_btc_pit", "flow"),
+    "ETH ETF flows net":   ("gn_etf_flows_net_eth", "gn_etf_flows_net_eth_pit", "flow"),
+})
+
 
 def _key(label):
     """Shell/awk-safe machine key: GATE <key> in greppable output."""
