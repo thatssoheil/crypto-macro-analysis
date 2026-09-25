@@ -1,6 +1,6 @@
 # Macro + Crypto Master Dataset
 
-Built: 2026-09-24T15:02:50.623941+00:00
+Built: 2026-09-25T20:00:47.100667+00:00
 
 | Chart | Rows | Span | Source |
 |---|---|---|---|
@@ -47,48 +47,48 @@ Built: 2026-09-24T15:02:50.623941+00:00
 | eth_tvl_defillama | 3285 | 2017-09-27 -> 2026-09-24 | DefiLlama historicalChainTvl/Ethereum |
 | ethbtc_daily_bitstamp | 3327 | 2017-08-16 00:00:00 -> 2026-09-24 00:00:00 | Bitstamp v2 ohlc |
 | stablecoin_total_liquidity | 3222 | 2017-11-29 -> 2026-09-24 | DefiLlama stablecoincharts/all |
-| gn_exchange_netflow_btc | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [BTC] (merged; 30d window per fetch) |
-| gn_exchange_balance_btc | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/distribution/balance_exchanges [BTC] (merged; 30d window per fetch) |
-| gn_sopr | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/sopr [BTC] (merged; 30d window per fetch) |
-| gn_nupl | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss [BTC] (merged; 30d window per fetch) |
-| gn_supply_in_profit_pct | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/supply/profit_relative [BTC] (merged; 30d window per fetch) |
-| gn_exchange_netflow_eth | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [ETH] (merged; 30d window per fetch) |
-| gn_exchange_balance_eth | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/distribution/balance_exchanges [ETH] (merged; 30d window per fetch) |
-| gn_sopr_eth | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/sopr [ETH] (merged; 30d window per fetch) |
-| gn_nupl_eth | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss [ETH] (merged; 30d window per fetch) |
-| gn_supply_in_profit_pct_eth | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/supply/profit_relative [ETH] (merged; 30d window per fetch) |
-| gn_exchange_netflow_btc_pit | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net_pit [BTC] (merged; 30d window per fetch) |
-| gn_exchange_balance_btc_pit | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/distribution/balance_exchanges_pit [BTC] (merged; 30d window per fetch) |
-| gn_sopr_pit | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/sopr_pit [BTC] (merged; 30d window per fetch) |
-| gn_nupl_pit | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss_pit [BTC] (merged; 30d window per fetch) |
-| gn_supply_in_profit_pct_pit | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/supply/profit_relative_pit [BTC] (merged; 30d window per fetch) |
-| gn_exchange_netflow_eth_pit | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net_pit [ETH] (merged; 30d window per fetch) |
-| gn_exchange_balance_eth_pit | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/distribution/balance_exchanges_pit [ETH] (merged; 30d window per fetch) |
-| gn_sopr_eth_pit | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/sopr_pit [ETH] (merged; 30d window per fetch) |
-| gn_nupl_eth_pit | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss_pit [ETH] (merged; 30d window per fetch) |
-| gn_supply_in_profit_pct_eth_pit | 42 | 2026-08-13 -> 2026-09-23 | Glassnode MCP /v1/metrics/supply/profit_relative_pit [ETH] (merged; 30d window per fetch) |
-| gn_hodler_npc_btc | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/hodler_net_position_change [BTC] (merged; 30d window per fetch) |
-| gn_hodler_npc_btc_pit | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/hodler_net_position_change_pit [BTC] (merged; 30d window per fetch) |
-| gn_hodler_npc_eth | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/hodler_net_position_change [ETH] (merged; 30d window per fetch) |
-| gn_hodler_npc_eth_pit | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/hodler_net_position_change_pit [ETH] (merged; 30d window per fetch) |
-| gn_net_realized_pl | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/net_realized_profit_loss [BTC] (merged; 30d window per fetch) |
-| gn_net_realized_pl_pit | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/net_realized_profit_loss_pit [BTC] (merged; 30d window per fetch) |
-| gn_net_realized_pl_eth | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/net_realized_profit_loss [ETH] (merged; 30d window per fetch) |
-| gn_net_realized_pl_eth_pit | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/net_realized_profit_loss_pit [ETH] (merged; 30d window per fetch) |
-| gn_sopr_adjusted | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/sopr_adjusted [BTC] (merged; 30d window per fetch) |
-| gn_sopr_adjusted_pit | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/sopr_adjusted_pit [BTC] (merged; 30d window per fetch) |
-| gn_sopr_155d | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/sopr_more_155 [BTC] (merged; 30d window per fetch) |
-| gn_sopr_155d_pit | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/indicators/sopr_more_155_pit [BTC] (merged; 30d window per fetch) |
-| gn_whales_to_exchanges | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/transactions/transfers_volume_whales_to_exchanges_sum [BTC] (merged; 30d window per fetch) |
-| gn_whales_to_exchanges_pit | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/transactions/transfers_volume_whales_to_exchanges_sum_pit [BTC] (merged; 30d window per fetch) |
-| gn_exchanges_to_whales | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_to_whales_sum [BTC] (merged; 30d window per fetch) |
-| gn_exchanges_to_whales_pit | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_to_whales_sum_pit [BTC] (merged; 30d window per fetch) |
-| gn_reshuffling_ratio | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/distribution/exchange_reshuffling_ratio [BTC] (merged; 30d window per fetch) |
-| gn_reshuffling_ratio_pit | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/distribution/exchange_reshuffling_ratio_pit [BTC] (merged; 30d window per fetch) |
-| gn_etf_flows_net_btc | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/institutions/us_spot_etf_flows_net [BTC] (merged; 30d window per fetch) |
-| gn_etf_flows_net_btc_pit | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/institutions/us_spot_etf_flows_net_pit [BTC] (merged; 30d window per fetch) |
-| gn_etf_flows_net_eth | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/institutions/us_spot_etf_flows_net [ETH] (merged; 30d window per fetch) |
-| gn_etf_flows_net_eth_pit | 31 | 2026-08-24 -> 2026-09-23 | Glassnode MCP /v1/metrics/institutions/us_spot_etf_flows_net_pit [ETH] (merged; 30d window per fetch) |
+| gn_exchange_netflow_btc | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [BTC] (merged; 30d window per fetch) |
+| gn_exchange_balance_btc | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/distribution/balance_exchanges [BTC] (merged; 30d window per fetch) |
+| gn_sopr | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/sopr [BTC] (merged; 30d window per fetch) |
+| gn_nupl | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss [BTC] (merged; 30d window per fetch) |
+| gn_supply_in_profit_pct | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/supply/profit_relative [BTC] (merged; 30d window per fetch) |
+| gn_exchange_netflow_eth | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [ETH] (merged; 30d window per fetch) |
+| gn_exchange_balance_eth | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/distribution/balance_exchanges [ETH] (merged; 30d window per fetch) |
+| gn_sopr_eth | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/sopr [ETH] (merged; 30d window per fetch) |
+| gn_nupl_eth | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss [ETH] (merged; 30d window per fetch) |
+| gn_supply_in_profit_pct_eth | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/supply/profit_relative [ETH] (merged; 30d window per fetch) |
+| gn_exchange_netflow_btc_pit | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net_pit [BTC] (merged; 30d window per fetch) |
+| gn_exchange_balance_btc_pit | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/distribution/balance_exchanges_pit [BTC] (merged; 30d window per fetch) |
+| gn_sopr_pit | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/sopr_pit [BTC] (merged; 30d window per fetch) |
+| gn_nupl_pit | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss_pit [BTC] (merged; 30d window per fetch) |
+| gn_supply_in_profit_pct_pit | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/supply/profit_relative_pit [BTC] (merged; 30d window per fetch) |
+| gn_exchange_netflow_eth_pit | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net_pit [ETH] (merged; 30d window per fetch) |
+| gn_exchange_balance_eth_pit | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/distribution/balance_exchanges_pit [ETH] (merged; 30d window per fetch) |
+| gn_sopr_eth_pit | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/sopr_pit [ETH] (merged; 30d window per fetch) |
+| gn_nupl_eth_pit | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/net_unrealized_profit_loss_pit [ETH] (merged; 30d window per fetch) |
+| gn_supply_in_profit_pct_eth_pit | 43 | 2026-08-13 -> 2026-09-24 | Glassnode MCP /v1/metrics/supply/profit_relative_pit [ETH] (merged; 30d window per fetch) |
+| gn_hodler_npc_btc | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/hodler_net_position_change [BTC] (merged; 30d window per fetch) |
+| gn_hodler_npc_btc_pit | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/hodler_net_position_change_pit [BTC] (merged; 30d window per fetch) |
+| gn_hodler_npc_eth | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/hodler_net_position_change [ETH] (merged; 30d window per fetch) |
+| gn_hodler_npc_eth_pit | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/hodler_net_position_change_pit [ETH] (merged; 30d window per fetch) |
+| gn_net_realized_pl | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/net_realized_profit_loss [BTC] (merged; 30d window per fetch) |
+| gn_net_realized_pl_pit | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/net_realized_profit_loss_pit [BTC] (merged; 30d window per fetch) |
+| gn_net_realized_pl_eth | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/net_realized_profit_loss [ETH] (merged; 30d window per fetch) |
+| gn_net_realized_pl_eth_pit | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/net_realized_profit_loss_pit [ETH] (merged; 30d window per fetch) |
+| gn_sopr_adjusted | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/sopr_adjusted [BTC] (merged; 30d window per fetch) |
+| gn_sopr_adjusted_pit | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/sopr_adjusted_pit [BTC] (merged; 30d window per fetch) |
+| gn_sopr_155d | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/sopr_more_155 [BTC] (merged; 30d window per fetch) |
+| gn_sopr_155d_pit | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/indicators/sopr_more_155_pit [BTC] (merged; 30d window per fetch) |
+| gn_whales_to_exchanges | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/transactions/transfers_volume_whales_to_exchanges_sum [BTC] (merged; 30d window per fetch) |
+| gn_whales_to_exchanges_pit | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/transactions/transfers_volume_whales_to_exchanges_sum_pit [BTC] (merged; 30d window per fetch) |
+| gn_exchanges_to_whales | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_to_whales_sum [BTC] (merged; 30d window per fetch) |
+| gn_exchanges_to_whales_pit | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_to_whales_sum_pit [BTC] (merged; 30d window per fetch) |
+| gn_reshuffling_ratio | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/distribution/exchange_reshuffling_ratio [BTC] (merged; 30d window per fetch) |
+| gn_reshuffling_ratio_pit | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/distribution/exchange_reshuffling_ratio_pit [BTC] (merged; 30d window per fetch) |
+| gn_etf_flows_net_btc | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/institutions/us_spot_etf_flows_net [BTC] (merged; 30d window per fetch) |
+| gn_etf_flows_net_btc_pit | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/institutions/us_spot_etf_flows_net_pit [BTC] (merged; 30d window per fetch) |
+| gn_etf_flows_net_eth | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/institutions/us_spot_etf_flows_net [ETH] (merged; 30d window per fetch) |
+| gn_etf_flows_net_eth_pit | 32 | 2026-08-24 -> 2026-09-24 | Glassnode MCP /v1/metrics/institutions/us_spot_etf_flows_net_pit [ETH] (merged; 30d window per fetch) |
 | fred_rrp | 3332 | 2003-02-07 -> 2026-09-23 | FRED RRPONTSYD |
 | fred_tga | 1240 | 2002-12-18 -> 2026-09-16 | FRED WTREGEN |
 | tga_daily | 5268 | 2005-10-03 -> 2026-09-22 | Treasury FiscalData DTS operating cash balance (TGA, USD millions) |
