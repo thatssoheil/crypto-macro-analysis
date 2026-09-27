@@ -215,6 +215,11 @@ _EXTRA = [
     ("bn_taker_eth",           lambda v: 0.1 < v < 10,        "{:.3f}"),
     ("bn_funding_btc",         lambda v: -0.01 < v < 0.01,    "{:.6f}"),
     ("bn_funding_eth",         lambda v: -0.01 < v < 0.01,    "{:.6f}"),
+    # 2026-09-27 batch 2 (Binance gross exchange flows; non-negative gross)
+    ("gn_binance_inflow_btc",  lambda v: 0 <= v < 1_000_000,   "{:,.0f}"),
+    ("gn_binance_outflow_btc", lambda v: 0 <= v < 1_000_000,   "{:,.0f}"),
+    ("gn_binance_inflow_eth",  lambda v: 0 <= v < 5_000_000,   "{:,.0f}"),
+    ("gn_binance_outflow_eth", lambda v: 0 <= v < 5_000_000,   "{:,.0f}"),
 ]
 for _n, _band, _fmt in _EXTRA:
     _d = load(_n)

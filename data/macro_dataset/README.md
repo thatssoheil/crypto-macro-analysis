@@ -1,6 +1,6 @@
 # Macro + Crypto Master Dataset
 
-Built: 2026-09-27T20:00:04.774476+00:00
+Built: 2026-09-27T20:16:52.346708+00:00
 
 | Chart | Rows | Span | Source |
 |---|---|---|---|
@@ -102,6 +102,14 @@ Built: 2026-09-27T20:00:04.774476+00:00
 | bn_taker_eth | 1631 | 2021-12-01 -> 2026-09-26 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
 | bn_funding_btc | 2435 | 2020-01-01 -> 2026-08-31 | Binance monthly fundingRate (BTCUSDT, daily sums) (merged; 30d window per fetch) |
 | bn_funding_eth | 2435 | 2020-01-01 -> 2026-08-31 | Binance monthly fundingRate (ETHUSDT, daily sums) (merged; 30d window per fetch) |
+| gn_binance_inflow_btc | 30 | 2026-08-28 -> 2026-09-26 | Glassnode MCP /v1/metrics/transactions/transfers_volume_to_exchanges_sum [BTC] (merged; 30d window per fetch) |
+| gn_binance_inflow_btc_pit | 30 | 2026-08-28 -> 2026-09-26 | Glassnode MCP /v1/metrics/transactions/transfers_volume_to_exchanges_sum_pit [BTC] (merged; 30d window per fetch) |
+| gn_binance_outflow_btc | 30 | 2026-08-28 -> 2026-09-26 | Glassnode MCP /v1/metrics/transactions/transfers_volume_from_exchanges_sum [BTC] (merged; 30d window per fetch) |
+| gn_binance_outflow_btc_pit | 30 | 2026-08-28 -> 2026-09-26 | Glassnode MCP /v1/metrics/transactions/transfers_volume_from_exchanges_sum_pit [BTC] (merged; 30d window per fetch) |
+| gn_binance_inflow_eth | 30 | 2026-08-28 -> 2026-09-26 | Glassnode MCP /v1/metrics/transactions/transfers_volume_to_exchanges_sum [ETH] (merged; 30d window per fetch) |
+| gn_binance_inflow_eth_pit | 30 | 2026-08-28 -> 2026-09-26 | Glassnode MCP /v1/metrics/transactions/transfers_volume_to_exchanges_sum_pit [ETH] (merged; 30d window per fetch) |
+| gn_binance_outflow_eth | 30 | 2026-08-28 -> 2026-09-26 | Glassnode MCP /v1/metrics/transactions/transfers_volume_from_exchanges_sum [ETH] (merged; 30d window per fetch) |
+| gn_binance_outflow_eth_pit | 30 | 2026-08-28 -> 2026-09-26 | Glassnode MCP /v1/metrics/transactions/transfers_volume_from_exchanges_sum_pit [ETH] (merged; 30d window per fetch) |
 
 FRED series (17) added when FRED_API_KEY env is set.
 On-chain `gn_*` charts: keyless Glassnode MCP, 30d window per fetch, merged by date

@@ -114,6 +114,11 @@ GN_HEADERS = {
     "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Site": "cross-site",
     "Origin": GN_URL, "Referer": GN_URL + "/",
 }
+GN_TO_EXCH = "/v1/metrics/transactions/transfers_volume_to_exchanges_sum"
+GN_TO_EXCH_PIT = GN_TO_EXCH + "_pit"
+GN_FROM_EXCH = "/v1/metrics/transactions/transfers_volume_from_exchanges_sum"
+GN_FROM_EXCH_PIT = GN_FROM_EXCH + "_pit"
+
 GN_METRICS = {
     # chart name                     (Glassnode API endpoint, asset)
     "gn_exchange_netflow_btc":      ("/v1/metrics/transactions/transfers_volume_exchanges_net", "BTC"),  # BTC/day, + = into exchanges
@@ -174,6 +179,19 @@ GN_METRICS = {
     "gn_etf_flows_net_btc_pit":     ("/v1/metrics/institutions/us_spot_etf_flows_net_pit", "BTC"),
     "gn_etf_flows_net_eth":         ("/v1/metrics/institutions/us_spot_etf_flows_net", "ETH"),
     "gn_etf_flows_net_eth_pit":     ("/v1/metrics/institutions/us_spot_etf_flows_net_pit", "ETH"),
+    # 2026-09-27 batch 2: BINANCE-specific gross exchange flows (inflow and outflow
+    # separately). The MCP passes query params through, so e=binance filters to the
+    # venue. Gross directions are non-negative; the confidence gate treats them with
+    # the level rule. All-exchange gross twins (no e filter) exist for validation but
+    # are NOT committed here.
+    "gn_binance_inflow_btc":        (GN_TO_EXCH, "BTC", {"e": "binance"}),
+    "gn_binance_inflow_btc_pit":    (GN_TO_EXCH_PIT, "BTC", {"e": "binance"}),
+    "gn_binance_outflow_btc":       (GN_FROM_EXCH, "BTC", {"e": "binance"}),
+    "gn_binance_outflow_btc_pit":   (GN_FROM_EXCH_PIT, "BTC", {"e": "binance"}),
+    "gn_binance_inflow_eth":        (GN_TO_EXCH, "ETH", {"e": "binance"}),
+    "gn_binance_inflow_eth_pit":    (GN_TO_EXCH_PIT, "ETH", {"e": "binance"}),
+    "gn_binance_outflow_eth":       (GN_FROM_EXCH, "ETH", {"e": "binance"}),
+    "gn_binance_outflow_eth_pit":   (GN_FROM_EXCH_PIT, "ETH", {"e": "binance"}),
 }
 
 def _sse_json(text):
@@ -211,13 +229,15 @@ def fetch_glassnode():
     sess.post(GN_URL, headers=h, timeout=30,
               json={"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
     new_rows = 0
-    for name, (ep, asset) in GN_METRICS.items():
+    for name, spec in GN_METRICS.items():
+        ep, asset = spec[0], spec[1]
+        extra = spec[2] if len(spec) > 2 else {}
         try:
             rr = sess.post(GN_URL, headers=h, timeout=60, json={
                 "jsonrpc": "2.0", "id": 2, "method": "tools/call",
                 "params": {"name": "fetch_metric",
                            "arguments": {"endpoint": ep,
-                                         "params": {"a": asset, "i": "24h", "s": "1704067200"}}}})
+                                         "params": {"a": asset, "i": "24h", "s": "1704067200", **extra}}}})
             body = _sse_json(rr.text) or {}
             content = (body.get("result") or {}).get("content") or []
             payload = json.loads(content[0]["text"]) if content else {}

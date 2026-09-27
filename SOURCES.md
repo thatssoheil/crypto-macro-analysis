@@ -164,6 +164,7 @@ rolling-30d merge, same live + `*_pit` twins, same gate.
 | `gn_exchanges_to_whales` | `/v1/metrics/transactions/transfers_volume_exchanges_to_whales_sum` | Exchange -> whale withdrawal volume (coins/day). |
 | `gn_reshuffling_ratio` | `/v1/metrics/distribution/exchange_reshuffling_ratio` | Exchange reshuffling ratio (0-1): exchange-to-exchange churn, not real flow. |
 | `gn_etf_flows_net_btc` / `_eth` | `/v1/metrics/institutions/us_spot_etf_flows_net` | US spot ETF net flows. Stored AS SERVED - the vendor does not document units; verify scale before comparing with USD headlines. |
+| `gn_binance_inflow_btc` / `gn_binance_outflow_btc` (+ `_eth` twins, + `_pit`) | `/v1/metrics/transactions/transfers_volume_to_exchanges_sum` / `..._from_exchanges_sum` with `e=binance` | Gross daily coin volume transferred INTO / OUT OF Binance-labelled addresses (non-negative; net = inflow - outflow). The all-exchange totals exist unfiltered (`e` omitted) - used for validation, not committed. Live + PIT twins fetched in the same session (2026-09-27). |
 
 First gate run (2026-09-24): hodler NPC (BTC+ETH), net realized P/L (BTC+ETH), adjusted SOPR,
 SOPR 155d, and ETF net flows (BTC+ETH) all CONFIRMED. `gn_whales_to_exchanges` UNSTABLE

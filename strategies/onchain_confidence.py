@@ -58,6 +58,15 @@ PAIRS.update({
     "BTC reshuffling":     ("gn_reshuffling_ratio", "gn_reshuffling_ratio_pit", "level"),
     "BTC ETF flows net":   ("gn_etf_flows_net_btc", "gn_etf_flows_net_btc_pit", "flow"),
     "ETH ETF flows net":   ("gn_etf_flows_net_eth", "gn_etf_flows_net_eth_pit", "flow"),
+    # 2026-09-27 batch 2: BINANCE-specific GROSS exchange flows (inflow and outflow
+    # separately, per the owner's ask for exchange-level detail). The MCP passes
+    # query params through, so e=binance filters to the venue; the series are
+    # non-negative gross directions, so the gate treats them with the level rule
+    # (like the whale columns, sign tests are meaningless on them).
+    "BTC binance inflow":  ("gn_binance_inflow_btc", "gn_binance_inflow_btc_pit", "level"),
+    "BTC binance outflow": ("gn_binance_outflow_btc", "gn_binance_outflow_btc_pit", "level"),
+    "ETH binance inflow":  ("gn_binance_inflow_eth", "gn_binance_inflow_eth_pit", "level"),
+    "ETH binance outflow": ("gn_binance_outflow_eth", "gn_binance_outflow_eth_pit", "level"),
 })
 
 

@@ -1,5 +1,5 @@
 {
-  "built": "2026-09-27T20:00:04.774476+00:00",
+  "built": "2026-09-27T20:16:52.346708+00:00",
   "charts": {
     "btcusd_daily_bitstamp": {
       "file": "btcusd_daily_bitstamp.csv",
@@ -588,6 +588,54 @@
       "rows": 2435,
       "source": "Binance monthly fundingRate (ETHUSDT, daily sums) (merged; 30d window per fetch)",
       "span": "2020-01-01 -> 2026-08-31"
+    },
+    "gn_binance_inflow_btc": {
+      "file": "gn_binance_inflow_btc.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_to_exchanges_sum [BTC] (merged; 30d window per fetch)",
+      "span": "2026-08-28 -> 2026-09-26"
+    },
+    "gn_binance_inflow_btc_pit": {
+      "file": "gn_binance_inflow_btc_pit.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_to_exchanges_sum_pit [BTC] (merged; 30d window per fetch)",
+      "span": "2026-08-28 -> 2026-09-26"
+    },
+    "gn_binance_outflow_btc": {
+      "file": "gn_binance_outflow_btc.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_from_exchanges_sum [BTC] (merged; 30d window per fetch)",
+      "span": "2026-08-28 -> 2026-09-26"
+    },
+    "gn_binance_outflow_btc_pit": {
+      "file": "gn_binance_outflow_btc_pit.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_from_exchanges_sum_pit [BTC] (merged; 30d window per fetch)",
+      "span": "2026-08-28 -> 2026-09-26"
+    },
+    "gn_binance_inflow_eth": {
+      "file": "gn_binance_inflow_eth.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_to_exchanges_sum [ETH] (merged; 30d window per fetch)",
+      "span": "2026-08-28 -> 2026-09-26"
+    },
+    "gn_binance_inflow_eth_pit": {
+      "file": "gn_binance_inflow_eth_pit.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_to_exchanges_sum_pit [ETH] (merged; 30d window per fetch)",
+      "span": "2026-08-28 -> 2026-09-26"
+    },
+    "gn_binance_outflow_eth": {
+      "file": "gn_binance_outflow_eth.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_from_exchanges_sum [ETH] (merged; 30d window per fetch)",
+      "span": "2026-08-28 -> 2026-09-26"
+    },
+    "gn_binance_outflow_eth_pit": {
+      "file": "gn_binance_outflow_eth_pit.csv",
+      "rows": 30,
+      "source": "Glassnode MCP /v1/metrics/transactions/transfers_volume_from_exchanges_sum_pit [ETH] (merged; 30d window per fetch)",
+      "span": "2026-08-28 -> 2026-09-26"
     }
   }
 }
