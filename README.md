@@ -33,6 +33,8 @@ current numbers; docs never hardcode them (they would go stale).
 - **A regime engine** that scores the current macro environment into a
   **HOLD / CASH / BUY-the-dip** phase, using 14 weighted signals across 4 causal groups.
 - **Backtest + audit scripts** proving (and checking) every claim with real data.
+- **A futures-vs-spot leverage study** (`strategies/futures_vs_spot.py`): what leveraged long
+  positions really cost - funding, liquidation distance, and a regime-switched A/B against spot.
 
 Current verdict: `bash scripts/refresh.sh` (fetches latest data, re-runs engine + audit +
 on-chain confidence gate).
