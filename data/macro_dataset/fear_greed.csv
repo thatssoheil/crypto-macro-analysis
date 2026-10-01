@@ -1,4 +1,8 @@
 date,value,classification
+2026-10-01,74,Greed
+2026-09-30,71,Greed
+2026-09-29,73,Greed
+2026-09-28,74,Greed
 2026-09-27,70,Greed
 2026-09-26,74,Greed
 2026-09-25,71,Greed
@@ -2995,7 +2999,3 @@ date,value,classification
 2018-07-17,39,Fear
 2018-07-16,36,Fear
 2018-07-15,32,Fear
-2018-07-14,29,Fear
-2018-07-13,29,Fear
-2018-07-12,33,Fear
-2018-07-11,29,Fear
