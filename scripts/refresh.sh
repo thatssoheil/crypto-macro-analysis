@@ -57,6 +57,9 @@ echo "=== [1/4] fetch latest data ==="
 # build_macro_dataset.py appends whatever is new since the last fetch.
 # Keyless sources work everywhere; FRED series run when FRED_API_KEY is set.
 "$PY" "$REPO_DIR/strategies/build_macro_dataset.py" 2>&1 | tail -4 || { echo "fetch failed (network?)" >&2; exit 1; }
+# Derivatives deep file (funding + daily metrics + DVOL): append-only, skips
+# existing dates, so it only fetches what is new. Fail-soft.
+"$PY" "$REPO_DIR/strategies/backfill_derivatives.py" 2>&1 | tail -2 || echo "derivatives backfill failed (non-fatal)" >&2
 
 echo "=== [2/4] regime engine (stateless: prints verdict, saves nothing) ==="
 "$PY" "$REPO_DIR/strategies/macro_regime_v3.py" 2>&1 | tail -4
