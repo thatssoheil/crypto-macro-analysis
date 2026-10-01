@@ -57,7 +57,8 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
 | `strategies/macro_backtest.py` | v1 backtest. |
 | `strategies/macro_backtest_v2.py` | v2 backtest (200d-MA trend filter). |
 | `strategies/build_btc_dataset.py` | Standalone BTC price builder (blockchain.info). |
-| `strategies/backfill_derivatives.py` | One-time deep backfill for the derivatives series (Deribit DVOL + Binance archive positioning/funding). Re-runnable; skips dates already present. |
+| `strategies/backfill_derivatives.py` | Derivatives deep backfill (Deribit DVOL + Binance archive positioning/funding). Re-runnable; skips dates already present. Runs as part of `refresh.sh`. |
+| `strategies/futures_vs_spot.py` | Futures-vs-spot leverage study (funding drag, liquidation math, constant vs regime-switched leveraged longs). Stateless; regenerate for numbers. |
 | `scripts/refresh.sh` | On-demand refresh runner: fetch latest data (charts append daily) + re-run engine + audit. Run when the user asks for an update. `--check` = status only. |
 | `data/macro_dataset/` | 98 charts, one CSV per series + `manifest.json` (source/span/rows per chart) + auto-generated README. |
 | `data/macro/` | Gitignored scratch. Results are never committed - every script regenerates fresh and prints to stdout. |
