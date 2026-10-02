@@ -180,10 +180,13 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
 - Glassnode's endpoint is Cloudflare-fronted: bare UAs get 403 "Just a moment",
   full browser headers (see `GN_HEADERS`) get 200. A Glassnode failure is
   fail-soft (WARN, not `FAILED`) so it cannot degrade the weekly refresh.
-- **2026-09-24: the endpoint briefly required OAuth (`401 "This server requires an
-  OAuth access token"`) for about 2 hours mid-morning, then recovered on its own.**
-  Treat public access as potentially flaky - the fail-soft + stale-chart check cover
-  outages; a gap longer than 30 days cannot be backfilled.
+- **2026-10-01: keyless access ENDED.** The MCP now returns `401 -32001
+  "Authentication required. Sign in with your Glassnode account, or supply an API
+  key via the X-Api-Key header."` (the 2026-09-24 flap was the rehearsal). The
+  builder reads `GLASSNODE_API_KEY` from `.env` and sends `X-Api-Key` when set -
+  any plan with API access (Advanced Light API = 14-day history, daily resolution,
+  50 calls/day). Without a key the daily append fails soft (WARN + notification)
+  and charts freeze; a gap heals only within 30 days of an outage.
 
 ## Simulation pitfalls
 
