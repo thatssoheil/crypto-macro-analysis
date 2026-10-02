@@ -22,7 +22,7 @@ current numbers; docs never hardcode them (they would go stale).
 
 - **A complete, locally-stored macro + crypto dataset** (98 charts, CSV, one file per series)
   covering money supply, rates, inflation, dollar, risk appetite, on-chain flow, and sentiment.
-- **An on-chain layer** (keyless Glassnode MCP): exchange flow, exchange balances, SOPR, NUPL and
+- **An on-chain layer** (Glassnode MCP; auth-walled since 2026-10-01 - set `GLASSNODE_API_KEY`): exchange flow, exchange balances, SOPR, NUPL and
   supply-in-profit for BTC and ETH, plus a flow-semantics family (hodler net position change,
   net realized P/L, adjusted SOPR, whale flows, reshuffling) and US spot ETF net flows - each
   stored twice, live and point-in-time, and checked against each other on every run (see
@@ -120,11 +120,11 @@ source + span + row-count recorded in `manifest.json`.
 > **Every data source, endpoint, and known gap is documented in
 > [`SOURCES.md`](SOURCES.md).** Read it before adding a new chart.
 
-## On-chain layer (keyless, and checked for its own reliability)
+## On-chain layer (auth-walled since 2026-10-01, and checked for its own reliability)
 
 Twenty-one metric series (the core five for BTC and ETH - exchange netflow, exchange balance,
 SOPR, NUPL, supply in profit - plus the 2026-09-24 flow-semantics family and US spot ETF net
-flows) fetched from Glassnode's free public MCP endpoint (no key, no account, 30-day rolling
+flows) fetched from Glassnode's MCP endpoint (free and keyless until 2026-10-01; now auth-required), 30-day rolling
 window, merged by date into the committed CSV so the local file is the history).
 
 > **2026-09-24: Glassnode's public endpoint had a brief OAuth-only flap (about two hours,

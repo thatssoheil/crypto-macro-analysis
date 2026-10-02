@@ -52,7 +52,8 @@ def save_csv(name, rows, header, source):
 def merge_csv(name, rows, header, source):
     """Merge-by-date writer for ROLLING-WINDOW sources.
 
-    Glassnode's public endpoint only ever serves the last 30 days, so a plain
+    The Glassnode MCP serves at most the last 30 days per fetch (auth-walled
+    since 2026-10-01 - set GLASSNODE_API_KEY), so a plain
     overwrite would truncate the accumulated series every single run. Merge:
     existing rows keyed by date, new values win (revisions), ascending output.
     The chart therefore grows one day at a time and keeps its own history."""
@@ -89,7 +90,7 @@ def write_index():
     for k, v in manifest["charts"].items():
         readme.append(f"| {k} | {v['rows']} | {v['span']} | {v['source']} |")
     readme += ["", "FRED series (17) added when FRED_API_KEY env is set.",
-               "On-chain `gn_*` charts: keyless Glassnode MCP, 30d window per fetch, merged by date",
+               "On-chain `gn_*` charts: Glassnode MCP (auth-walled since 2026-10-01 - set GLASSNODE_API_KEY), 30d window per fetch, merged by date",
                "(the local file is the history - run daily to accumulate; `--glassnode-only` is the fast path).",
                "Update cadence: re-run script; charts overwrite in place (gn_* merge in place)."]
     (OUT / "README.md").write_text("\n".join(readme))
@@ -114,6 +115,13 @@ GN_HEADERS = {
     "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Site": "cross-site",
     "Origin": GN_URL, "Referer": GN_URL + "/",
 }
+# 2026-10-01: the MCP moved behind auth - OAuth sign-in or an X-Api-Key header
+# ("Authentication required", HTTP 401; the keyless era ended here). Set
+# GLASSNODE_API_KEY in .env to resume fetches on any plan with API access
+# (Advanced Light API or higher). Without a key the fetch fails soft (WARN;
+# charts keep their accumulated history untouched).
+if os.environ.get("GLASSNODE_API_KEY"):
+    GN_HEADERS["X-Api-Key"] = os.environ["GLASSNODE_API_KEY"]
 GN_TO_EXCH = "/v1/metrics/transactions/transfers_volume_to_exchanges_sum"
 GN_TO_EXCH_PIT = GN_TO_EXCH + "_pit"
 GN_FROM_EXCH = "/v1/metrics/transactions/transfers_volume_from_exchanges_sum"
@@ -219,7 +227,12 @@ def fetch_glassnode():
         "params": {"protocolVersion": "2025-06-18", "capabilities": {},
                    "clientInfo": {"name": "crypto-macro-analysis", "version": "1.0"}}})
     if r.status_code != 200:
-        print(f"  WARN glassnode unreachable (HTTP {r.status_code}) - on-chain charts keep existing data")
+        if r.status_code == 401 and not os.environ.get("GLASSNODE_API_KEY"):
+            print("  WARN glassnode now requires auth (HTTP 401): set GLASSNODE_API_KEY in .env - "
+                  "on-chain charts keep existing data (the fetch resumes on the next run with the key; "
+                  "a gap heals within the 30d window)")
+        else:
+            print(f"  WARN glassnode unreachable (HTTP {r.status_code}) - on-chain charts keep existing data")
         return False
     sid = r.headers.get("mcp-session-id")
     if not sid:

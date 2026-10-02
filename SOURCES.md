@@ -91,7 +91,14 @@ Free key at `fredaccount.stlouisfed.org/register`; API docs at
 **Gotchas:** ISM series `NAPM`/`NAPMN` are discontinued - skip them (HTTP 400).
 HY/IG only date back to 2023 - the window is bounded by that.
 
-## On-chain flow + cycle (Glassnode public MCP - keyless until 2026-09-24)
+## On-chain flow + cycle (Glassnode MCP - keyless era ended 2026-10-01)
+
+> **2026-10-01: the keyless MCP door closed** - the endpoint now returns
+> `401 "Authentication required. Sign in with your Glassnode account, or supply an
+> API key via the X-Api-Key header."` To resume, set `GLASSNODE_API_KEY` in `.env`
+> (builder sends it as `X-Api-Key`; Advanced Light API or higher). Without a key the
+> charts freeze and keep their committed history; because a fetch only ever covers
+> the last 30 days, an outage gap heals automatically only within 30 days.
 
 > **FLAP 2026-09-24 (resolved):** the endpoint returned HTTP 401 "requires an OAuth access
 > token" for anonymous clients for about two hours mid-morning (~08:35-10:45 UTC), then
@@ -187,8 +194,8 @@ the $957B figure). Values are USD millions, stored as served.
 
 ## Derivatives (Deribit + Binance public archive) - added 2026-09-24
 
-Replaces the planned Glassnode derivatives batch (the public MCP went OAuth-only
-mid-day 2026-09-24). All keyless; these sources have no PIT twins.
+Replaces the planned Glassnode derivatives batch (the public MCP went OAuth-only -
+first flap 2026-09-24, permanent 2026-10-01). All keyless; these sources have no PIT twins.
 
 | Chart | Source | What it shows |
 |-------|--------|---------------|
