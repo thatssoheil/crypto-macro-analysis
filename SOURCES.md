@@ -91,22 +91,21 @@ Free key at `fredaccount.stlouisfed.org/register`; API docs at
 **Gotchas:** ISM series `NAPM`/`NAPMN` are discontinued - skip them (HTTP 400).
 HY/IG only date back to 2023 - the window is bounded by that.
 
-## On-chain flow + cycle (Glassnode MCP - keyless era ended 2026-10-01)
+## On-chain flow + cycle (Glassnode MCP - FROZEN since 2026-10-01)
 
 > **2026-10-01: the keyless MCP door closed** - the endpoint now returns
 > `401 "Authentication required. Sign in with your Glassnode account, or supply an
-> API key via the X-Api-Key header."` To resume, set `GLASSNODE_API_KEY` in `.env`
-> (builder sends it as `X-Api-Key`; Advanced Light API or higher). Without a key the
-> charts freeze and keep their committed history; because a fetch only ever covers
-> the last 30 days, an outage gap heals automatically only within 30 days.
+> API key via the X-Api-Key header."` **2026-10-02: the paid route was ruled out
+> (owner decision) - the charts stay FROZEN at their last data; do not propose paid
+> plans or OAuth.** Without a key the builder skips the on-chain fetch entirely
+> (charts keep their committed history); the layer resumes automatically only if a
+> key is ever configured, and because a fetch only ever covers the last 30 days an
+> outage gap heals only within 30 days while appends are running.
 
 > **FLAP 2026-09-24 (resolved):** the endpoint returned HTTP 401 "requires an OAuth access
 > token" for anonymous clients for about two hours mid-morning (~08:35-10:45 UTC), then
 > recovered on its own (verified with live fetches; the same-day build merged normally).
-> Treat public access as potentially flaky: the daily append job fail-softs, reports
-> failures, and auto-resumes; a gap longer than 30 days cannot be backfilled. Fallback
-> options if a long outage recurs: OAuth (Glassnode account, authorization-code + PKCE)
-> or an API key.
+> The wall that stayed is the 2026-10-01 one above.
 
 The public MCP endpoint (`https://mcp.glassnode.com`, JSON-RPC over HTTP) exposes the
 metric catalogue; each fetch returns **only the last 30 days**.
@@ -149,7 +148,9 @@ what makes a flow read checkable. Free keyless access serves PIT series too (ver
 Rule: **describe with the live series, test with PIT**, and only state a flow direction when
 `strategies/onchain_confidence.py` reports CONFIRMED for that metric.
 
-Fast append (used by the daily check, ~10s, does not touch the slow sources):
+Fast append (used by the daily check, ~10s, does not touch the slow sources) -
+prints SKIPPED and fetches nothing when no key is configured (2026-10-02: the
+paid route was declined):
 
 ```bash
 ./.venv/bin/python strategies/build_macro_dataset.py --glassnode-only   # live + PIT twins

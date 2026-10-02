@@ -22,7 +22,7 @@ current numbers; docs never hardcode them (they would go stale).
 
 - **A complete, locally-stored macro + crypto dataset** (98 charts, CSV, one file per series)
   covering money supply, rates, inflation, dollar, risk appetite, on-chain flow, and sentiment.
-- **An on-chain layer** (Glassnode MCP; auth-walled since 2026-10-01 - set `GLASSNODE_API_KEY`): exchange flow, exchange balances, SOPR, NUPL and
+- **An on-chain layer** (Glassnode MCP; auth-walled since 2026-10-01 - frozen while no key is configured, see "On-chain layer" below): exchange flow, exchange balances, SOPR, NUPL and
   supply-in-profit for BTC and ETH, plus a flow-semantics family (hodler net position change,
   net realized P/L, adjusted SOPR, whale flows, reshuffling) and US spot ETF net flows - each
   stored twice, live and point-in-time, and checked against each other on every run (see
@@ -102,7 +102,7 @@ The repo itself stays schedule-free - no cron in repo code.
 |-------|--------|--------|------|
 | **Crypto price** | BTCUSD daily + hourly, ETHUSD daily | Bitstamp | 2011+ |
 | **On-chain** | hash-rate, difficulty, active addresses, transactions, market-cap, total supply | blockchain.info | 2009+ |
-| **On-chain flow** | exchange netflow, exchange balance, SOPR, NUPL, supply in profit, hodler NPC, net realized P/L, adjusted SOPR, whale flows, reshuffling, US spot ETF net flows (BTC + ETH where served, live + point-in-time) | Glassnode MCP (keyless) | 30d rolling, accrues locally |
+| **On-chain flow** | exchange netflow, exchange balance, SOPR, NUPL, supply in profit, hodler NPC, net realized P/L, adjusted SOPR, whale flows, reshuffling, US spot ETF net flows (BTC + ETH where served, live + point-in-time) | Glassnode MCP (auth-walled since 2026-10-01; frozen) | 30d rolling, accrues locally |
 | **Derivatives** | DVOL, perp open interest, top-trader L/S ratio, taker ratio, funding (BTC + ETH) | Deribit / Binance archive | 2020+ |
 | **Sentiment** | Fear & Greed index | alternative.me | 2018+ |
 | **Crypto liquidity** | stablecoin total supply (aggregate USDT/USDC/DAI) | DefiLlama | 2017+ |
@@ -120,16 +120,16 @@ source + span + row-count recorded in `manifest.json`.
 > **Every data source, endpoint, and known gap is documented in
 > [`SOURCES.md`](SOURCES.md).** Read it before adding a new chart.
 
-## On-chain layer (auth-walled since 2026-10-01, and checked for its own reliability)
+## On-chain layer (auth-walled since 2026-10-01 - frozen; checked for its own reliability)
 
 Twenty-one metric series (the core five for BTC and ETH - exchange netflow, exchange balance,
 SOPR, NUPL, supply in profit - plus the 2026-09-24 flow-semantics family and US spot ETF net
-flows) fetched from Glassnode's MCP endpoint (free and keyless until 2026-10-01; now auth-required), 30-day rolling
+flows) fetched from Glassnode's MCP endpoint (free and keyless until 2026-10-01; auth-required since, no key configured - the layer is frozen at its last data), 30-day rolling
 window, merged by date into the committed CSV so the local file is the history).
 
-> **2026-09-24: Glassnode's public endpoint had a brief OAuth-only flap (about two hours,
-> mid-morning) and then recovered - the `gn_*` charts resumed the same day. Treat the
-> public access as potentially flaky (see SOURCES.md).**
+> **2026-10-01: the keyless era ended (auth wall - see SOURCES.md). The layer is frozen
+> at its last data while no key is configured; describe `gn_*` charts as historical only,
+> never as live reads.**
 
 Each metric is stored **twice**: the live series (Glassnode's current best estimate) and its
 point-in-time twin (`*_pit`, immutable "as known then"). `strategies/onchain_confidence.py`
@@ -230,7 +230,7 @@ Note: a fresh `git clone` deletes `.env` (gitignored) - restore the key after cl
 - [x] Multi-signal backtest vs 2017-2026 (v4 composite: does NOT beat MA filter; hysteresis helps DD)
 - [x] On-demand refresh (`scripts/refresh.sh` - fetch latest + re-aggregate when asked)
 - [x] Stateless results (stdout-only; nothing saved, nothing read back)
-- [x] On-chain flow layer (keyless Glassnode MCP, BTC + ETH) with live-vs-point-in-time
+- [x] On-chain flow layer (Glassnode MCP, BTC + ETH; frozen since 2026-10-01) with live-vs-point-in-time
       confidence gating and a daily append job
 - [x] Flow-semantics family + US spot ETF net flows (source-hunt batch 1; gate + audit extended)
 - [x] Liquidity plumbing: RRP + TGA weekly + daily (source-hunt batch 3)
