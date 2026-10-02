@@ -90,14 +90,16 @@ def write_index():
     for k, v in manifest["charts"].items():
         readme.append(f"| {k} | {v['rows']} | {v['span']} | {v['source']} |")
     readme += ["", "FRED series (17) added when FRED_API_KEY env is set.",
-               "On-chain `gn_*` charts: Glassnode MCP (auth-walled since 2026-10-01 - set GLASSNODE_API_KEY), 30d window per fetch, merged by date",
+               "On-chain `gn_*` charts: Glassnode MCP (keyless access ended 2026-10-01; frozen unless a key is configured), 30d window per fetch, merged by date",
                "(the local file is the history - run daily to accumulate; `--glassnode-only` is the fast path).",
                "Update cadence: re-run script; charts overwrite in place (gn_* merge in place)."]
     (OUT / "README.md").write_text("\n".join(readme))
 
-# ========== 8. GLASSNODE MCP (keyless, rolling 30d window) ==========
-# Free public MCP endpoint - no API key, no account. Reached over JSON-RPC/HTTP.
-# Two facts drive the implementation:
+# ========== 8. GLASSNODE MCP (auth-walled 2026-10-01; skipped without a key) ==========
+# Reached over JSON-RPC/HTTP; keyless access ended 2026-10-01 (OAuth sign-in or
+# X-Api-Key header required now). Owner decision 2026-10-02: the paid route is
+# declined - without GLASSNODE_API_KEY this section is SKIPPED and the charts
+# stay frozen at their last data. Two facts still drive the implementation:
 #   1. Cloudflare fronts the endpoint: a bare client UA gets 403 "Just a moment",
 #      a full browser header set (sec-ch-ua / sec-fetch-* / Origin) gets 200.
 #   2. Every fetch returns AT MOST the last 30 days. Hence merge_csv, never
@@ -116,10 +118,10 @@ GN_HEADERS = {
     "Origin": GN_URL, "Referer": GN_URL + "/",
 }
 # 2026-10-01: the MCP moved behind auth - OAuth sign-in or an X-Api-Key header
-# ("Authentication required", HTTP 401; the keyless era ended here). Set
-# GLASSNODE_API_KEY in .env to resume fetches on any plan with API access
-# (Advanced Light API or higher). Without a key the fetch fails soft (WARN;
-# charts keep their accumulated history untouched).
+# ("Authentication required", HTTP 401; the keyless era ended here).
+# 2026-10-02: the paid route is declined (owner decision) - a key is NOT
+# expected; the fetch sections below skip without one. If a key is ever set,
+# X-Api-Key resumes the fetch automatically - nothing else needs changing.
 if os.environ.get("GLASSNODE_API_KEY"):
     GN_HEADERS["X-Api-Key"] = os.environ["GLASSNODE_API_KEY"]
 GN_TO_EXCH = "/v1/metrics/transactions/transfers_volume_to_exchanges_sum"
@@ -227,10 +229,9 @@ def fetch_glassnode():
         "params": {"protocolVersion": "2025-06-18", "capabilities": {},
                    "clientInfo": {"name": "crypto-macro-analysis", "version": "1.0"}}})
     if r.status_code != 200:
-        if r.status_code == 401 and not os.environ.get("GLASSNODE_API_KEY"):
-            print("  WARN glassnode now requires auth (HTTP 401): set GLASSNODE_API_KEY in .env - "
-                  "on-chain charts keep existing data (the fetch resumes on the next run with the key; "
-                  "a gap heals within the 30d window)")
+        if r.status_code == 401:
+            print("  WARN glassnode auth failed (HTTP 401) - check GLASSNODE_API_KEY in .env; "
+                  "on-chain charts keep existing data")
         else:
             print(f"  WARN glassnode unreachable (HTTP {r.status_code}) - on-chain charts keep existing data")
         return False
@@ -293,6 +294,11 @@ def bitstamp_ohlc(pair, step, name, header, source, max_iters=1000):
 # Appends the rolling-window on-chain charts without refetching the slow
 # sources (Bitstamp walks 15 years, Yahoo is rate-limited to ~8s/call).
 if "--glassnode-only" in sys.argv:
+    if not os.environ.get("GLASSNODE_API_KEY"):
+        # 2026-10-02: keyless access ended 2026-10-01 and the paid route is
+        # declined - with no key there is nothing to append (skip, exit 0).
+        print("== Glassnode on-chain: SKIPPED (no key; keyless access ended 2026-10-01, paid route declined) ==")
+        sys.exit(0)
     print("== Glassnode MCP on-chain append (rolling 30d window) ==")
     new_rows = fetch_glassnode()
     if new_rows:
@@ -429,9 +435,12 @@ if FRED_KEY:
 else:
     print("== FRED: SKIPPED (no FRED_API_KEY). 17 series ready when key provided: M2, Fed BS, rates, CPI, PCE, UNRATE, claims, payrolls, HY/IG spreads, RRP/TGA ==")
 
-# ========== 8. GLASSNODE on-chain (keyless public MCP, rolling 30d) ==========
-print("== Glassnode MCP on-chain (exchange flows, SOPR, NUPL, supply in profit) ==")
-fetch_glassnode()
+# ========== 8. GLASSNODE on-chain (auth-walled 2026-10-01; skipped without a key) ==========
+if os.environ.get("GLASSNODE_API_KEY"):
+    print("== Glassnode MCP on-chain (exchange flows, SOPR, NUPL, supply in profit) ==")
+    fetch_glassnode()
+else:
+    print("== Glassnode on-chain: SKIPPED (no key; keyless access ended 2026-10-01, paid route declined) - charts keep existing data ==")
 
 # ========== 9. TREASURY FISCALDATA: daily TGA (keyless) ==========
 # Daily counterpart of FRED's weekly WTREGEN, for the net-liquidity read
