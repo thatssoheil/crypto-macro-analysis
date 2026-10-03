@@ -83,7 +83,10 @@ system. There is NO cron/schedule - refresh happens only when asked:
 - **Daily on-chain append:** the bot's daily check also runs
   `build_macro_dataset.py --glassnode-only` and commits/pushes the `gn_*` charts
   (`Bot daily on-chain append <date>`). Those series are merge-only and can only
-  be built forward - see the Glassnode row in Data pitfalls.
+  be built forward - see the Glassnode row in Data pitfalls. Since 2026-10-02 the
+  daily job is a silent no-op when no key is configured (keyless access ended
+  2026-10-01; the paid route was ruled out) - the charts stay frozen until access
+  returns.
 - **Scope:** `scripts/refresh.sh` only refreshes LOCAL data + recomputes the
   verdict. It does NOT git-pull, does NOT push, does NOT schedule anything,
   does NOT save results. `build_macro_dataset.py` fetches keyless sources
@@ -182,11 +185,14 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
   fail-soft (WARN, not `FAILED`) so it cannot degrade the weekly refresh.
 - **2026-10-01: keyless access ENDED.** The MCP now returns `401 -32001
   "Authentication required. Sign in with your Glassnode account, or supply an API
-  key via the X-Api-Key header."` (the 2026-09-24 flap was the rehearsal). The
-  builder reads `GLASSNODE_API_KEY` from `.env` and sends `X-Api-Key` when set -
-  any plan with API access (Advanced Light API = 14-day history, daily resolution,
-  50 calls/day). Without a key the daily append fails soft (WARN + notification)
-  and charts freeze; a gap heals only within 30 days of an outage.
+  key via the X-Api-Key header."` (the 2026-09-24 flap was the rehearsal).
+  **2026-10-02: the paid route was ruled out (owner decision) - do not propose
+  paid plans or OAuth.** The builder reads `GLASSNODE_API_KEY` from `.env` and
+  sends `X-Api-Key` when set; without a key the on-chain section is SKIPPED (the
+  daily job exits silently; charts stay frozen) and the weekly report prints a
+  frozen marker instead of stale flow numbers. If a key is ever set, the fetch
+  resumes automatically. While frozen, `gn_*` charts are historical-only - never
+  quote them as live reads.
 
 ## Simulation pitfalls
 
@@ -213,5 +219,7 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
   risk-on (engine score positive); BTC crossed back above its 200d MA on
   2026-08-19 and has stayed above - the trend filter is IN the market again
   (it was in cash 2025-11-03 through 2026-08-19).
+- **On-chain layer: FROZEN** (no new rows since 2026-10-01; the paid route was
+  declined 2026-10-02). Treat `gn_*` charts as historical-only while frozen.
 - Open items: gem-basket layer (regime filter on an
   alt basket); per-protocol usage data (DAU/fees) is paywalled (Artemis/TokenTerminal).
