@@ -88,13 +88,15 @@ MAPPINGS = [
 
 
 def load_rows():
-    """Read every decision log in the directory (shards plus the main log).
+    """Read every decision log, keeping ONE cadence so dates do not double count.
 
-    Dedupe by (date, horizon) so a date asked twice counts once, keeping
-    the first record seen. Ledger files are skipped.
+    Earlier runs used a 5-day horizon and the dense shards use 3, so a naive
+    read counts the same date twice under two horizons and inflates n. We
+    keep only the most common horizon (the dense shard cadence once the
+    shards dominate), then dedupe by date. Ledger files are skipped.
     """
-    seen = set()
-    rows = []
+    from collections import Counter
+    raw = []
     for path in sorted(LOGDIR.glob("*.jsonl")):
         if "ledger" in path.name:
             continue
@@ -107,14 +109,22 @@ def load_rows():
                 continue
             if not r.get("decision") or "outcome_pct" not in r:
                 continue
-            key = (r.get("date"), r.get("horizon_days"))
-            if key in seen:
-                continue
-            seen.add(key)
             r["risk"] = parse_risk(r.get("reason"))
             r["conf"] = parse_conf(r.get("reason"))
-            rows.append(r)
-    rows.sort(key=lambda r: (r["date"], r.get("horizon_days")))
+            raw.append(r)
+    if not raw:
+        return []
+    modal = Counter(r.get("horizon_days") for r in raw).most_common(1)[0][0]
+    seen = set()
+    rows = []
+    for r in raw:
+        if r.get("horizon_days") != modal:
+            continue
+        if r["date"] in seen:
+            continue
+        seen.add(r["date"])
+        rows.append(r)
+    rows.sort(key=lambda r: r["date"])
     return rows
 
 
