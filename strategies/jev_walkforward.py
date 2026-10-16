@@ -259,15 +259,22 @@ def write_triage_ledger(res, task, row):
 def run(args):
     feats = build_features()
     LOGDIR.mkdir(parents=True, exist_ok=True)
+    logfile = Path(args.logfile) if args.logfile else LOGFILE
     existing = []
-    if LOGFILE.exists():
-        existing = [json.loads(l) for l in LOGFILE.read_text().splitlines() if l.strip()]
+    if logfile.exists():
+        existing = [json.loads(l) for l in logfile.read_text().splitlines() if l.strip()]
     seen = {(r["snippet"], r["date"]) for r in existing}
     all_rows = list(existing)
 
-    snippets = SNIPPETS[:1] if args.pilot else SNIPPETS
-    if args.snippet:
+    if args.start and args.end:
+        snippets = [(args.label or f"cont_{args.start}_{args.end}",
+                     args.start, args.end)]
+    elif args.pilot:
+        snippets = SNIPPETS[:1]
+    elif args.snippet:
         snippets = [s for s in SNIPPETS if s[0] == args.snippet]
+    else:
+        snippets = SNIPPETS
     if not args.log_only:
         for name, start, end in snippets:
             lo = pd.Timestamp(start, tz="UTC")
@@ -300,7 +307,7 @@ def run(args):
                 if dec is None:
                     print(f"  WARN {name} {d.date()}: unparseable: {(res.get('output') or '')[:80]!r}")
                     all_rows.append(rec)
-                    with LOGFILE.open("a") as f:
+                    with logfile.open("a") as f:
                         f.write(json.dumps(rec) + "\n")
                     continue
                 out = simulate(feats, d, dec["action"], dec["leverage"], args.cadence)
@@ -309,7 +316,7 @@ def run(args):
                 rec["outcome_pct"] = out["net_pct"]
                 rec["liq"] = out["liq"]
                 all_rows.append(rec)
-                with LOGFILE.open("a") as f:
+                with logfile.open("a") as f:
                     f.write(json.dumps(rec) + "\n")
                 prev = {"action": dec["action"], "leverage": dec["leverage"],
                         "date": str(d.date()), "outcome_pct": out["net_pct"],
@@ -399,6 +406,10 @@ if __name__ == "__main__":
     ap.add_argument("--pilot", action="store_true", help="first snippet only")
     ap.add_argument("--all", action="store_true", help="every snippet")
     ap.add_argument("--snippet", type=str, default=None)
+    ap.add_argument("--start", type=str, default=None, help="continuous run start date")
+    ap.add_argument("--end", type=str, default=None, help="continuous run end date")
+    ap.add_argument("--label", type=str, default=None, help="snippet label for a range")
+    ap.add_argument("--logfile", type=str, default=None, help="own log (for shards)")
     ap.add_argument("--cadence", type=int, default=5, help="decision + hold days")
     ap.add_argument("--log-only", action="store_true",
                     help="re-evaluate saved log, zero model calls")
