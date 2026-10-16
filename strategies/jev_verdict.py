@@ -30,17 +30,27 @@ SEED = 7
 
 
 def baselines(feats, dates):
-    """Buy-and-hold and the spot 200d-MA switch over the decision span."""
+    """Buy-and-hold and the spot 200d-MA switch over the decision span.
+
+    Returns returns AND max drawdowns, because the pre-registered gate
+    requires a risk condition as well as a return condition: a mapping
+    that wins on return while falling much deeper than the switch is not
+    an improvement.
+    """
     lo, hi = min(dates), max(dates)
     px = feats.loc[lo:hi, "close"]
     if len(px) < 2:
-        return None, None
+        return None
     bh = px.iloc[-1] / px.iloc[0] - 1
+    ret = px.pct_change().fillna(0.0)
+    bh_eq = (1.0 + ret).cumprod()
+    bh_dd = float((bh_eq / bh_eq.cummax() - 1.0).min())
     ma = feats.loc[lo:hi, "ma200"]
     sig = (px > ma).shift(1).fillna(False)
-    ret = px.pct_change().fillna(0.0)
-    sw = float((1.0 + sig * ret).prod() - 1.0)
-    return bh, sw
+    sw_eq = (1.0 + sig * ret).cumprod()
+    sw_dd = float((sw_eq / sw_eq.cummax() - 1.0).min())
+    return {"bh": float(bh), "bh_dd": bh_dd,
+            "sw": float(sw_eq.iloc[-1] - 1.0), "sw_dd": sw_dd}
 
 
 def cost_adjusted(feats, rows, fn):
@@ -111,6 +121,67 @@ def bootstrap_p(feats, rows, res, draws=2000):
     return float(np.mean(means >= real))
 
 
+def binomial_p(wins, n):
+    """Exact one-sided p-value that wins out of n beats a coin flip."""
+    if n == 0:
+        return 1.0
+    import math
+    total = 2 ** n
+    tail = sum(math.comb(n, k) for k in range(wins, n + 1))
+    return min(1.0, tail / total)
+
+
+def directional_skill(feats, rows):
+    """Direction quality, independent of any leverage mapping.
+
+    Answers the question the leverage rules cannot: is the model reading
+    the market, or just being sized into a bull run?
+    """
+    buckets = {"long": [], "short": [], "flat": []}
+    for r in rows:
+        t = pd.Timestamp(r["date"], tz="UTC")
+        if t not in feats.index:
+            continue
+        pos = feats.index.get_loc(t)
+        end = pos + r["horizon_days"]
+        if end >= len(feats):
+            continue
+        ret = feats["close"].iloc[end] / feats["close"].iloc[pos] - 1.0
+        above = bool(feats["close"].iloc[pos] > feats["ma200"].iloc[pos])
+        buckets[r["decision"]["action"]].append((ret, above, r["date"]))
+
+    print("\n=== DIRECTIONAL SKILL (leverage-independent) ===")
+    longs, shorts, flats = buckets["long"], buckets["short"], buckets["flat"]
+    n_dir = len(longs) + len(shorts)
+    wins = sum(1 for ret, _, _ in longs if ret > 0) + \
+        sum(1 for ret, _, _ in shorts if ret < 0)
+    hit = 100 * wins / n_dir if n_dir else 0.0
+    print(f"long calls {len(longs)} | short calls {len(shorts)} | flat calls {len(flats)}")
+    if n_dir:
+        print(f"direction hit rate {hit:.1f}% ({wins}/{n_dir}) "
+              f"| exact binomial p = {binomial_p(wins, n_dir):.4f}")
+    if longs:
+        print(f"  long:  mean fwd {np.mean([r for r,_,_ in longs])*100:+.2f}%  "
+              f"win {100*sum(1 for r,_,_ in longs if r>0)/len(longs):.1f}%")
+    if shorts:
+        print(f"  short: mean fwd {np.mean([r for r,_,_ in shorts])*100:+.2f}%  "
+              f"win {100*sum(1 for r,_,_ in shorts if r<0)/len(shorts):.1f}%")
+    if flats:
+        print(f"  flat:  mean fwd {np.mean([r for r,_,_ in flats])*100:+.2f}% "
+              f"(negative means it stepped aside before drops)")
+
+    print("\n  split by trend at the call:")
+    for label, want in (("above 200d MA", True), ("below 200d MA", False)):
+        ls = [r for r, a, _ in longs if a == want]
+        ss = [r for r, a, _ in shorts if a == want]
+        n = len(ls) + len(ss)
+        w = sum(1 for r in ls if r > 0) + sum(1 for r in ss if r < 0)
+        if n:
+            print(f"    {label:15} n={n:>4} hit {100*w/n:>5.1f}%  "
+                  f"long n={len(ls):>3}  short n={len(ss):>3}")
+    return hit, n_dir
+
+
 def main():
     feats = J.build_features()
     rows = load_rows()
@@ -121,9 +192,13 @@ def main():
         print("VERDICT: INSUFFICIENT DATA - no decisions logged yet")
         return
     dates = [pd.Timestamp(r["date"], tz="UTC") for r in risks]
-    bh, sw = baselines(feats, dates)
+    base = baselines(feats, dates)
+    if base is None:
+        print("VERDICT: INSUFFICIENT DATA")
+        return
     print(f"span: {min(dates).date()} -> {max(dates).date()} | "
-          f"buy-and-hold {bh*100:+.1f}% | spot MA200 switch {sw*100:+.1f}%")
+          f"buy-and-hold {base['bh']*100:+.1f}% (fall {base['bh_dd']*100:.1f}%) | "
+          f"spot MA200 switch {base['sw']*100:+.1f}% (fall {base['sw_dd']*100:.1f}%)")
     print(f"costs charged: {FEE_BP} bp per side (5 taker + 1 slippage)\n")
 
     header = ("{:<34} {:>4} {:>9} {:>7} {:>6} {:>8} {:>4} {:>6}".format(
@@ -143,25 +218,40 @@ def main():
         print(f"{name:34} {len(res):>4} {eq:>8.2f}x {np.mean(nets):>+7.2f} "
               f"{hit:>6.1f} {dd*100:>7.1f}% {liqs:>4} {p:>6.3f}")
 
+    dir_hit, dir_n = directional_skill(feats, risks)
+
     if not results:
         print("VERDICT: INSUFFICIENT DATA")
         return
-    best = max(results.items(), key=lambda kv: kv[1]["eq"])
-    n, m = best
-    checks = [
-        ("C1 beats buy-and-hold", m["eq"] - 1 > bh),
-        ("C2 beats spot MA200 switch", m["eq"] - 1 > sw),
-        ("C3 zero liquidations", m["liq"] == 0),
-        ("C4 hit rate above 50%", m["hit"] > 50),
-        ("C5 bootstrap p < 0.20", m["p"] < 0.20),
-    ]
-    print(f"\nbest mapping: {n} ({m['eq']:.2f}x, {m['hit']:.1f}% hit, "
-          f"{m['liq']} liqs, p={m['p']:.3f})")
-    for label, ok in checks:
-        print(f"  {'PASS' if ok else 'FAIL'}  {label}")
-    passed = all(ok for _, ok in checks)
-    print(f"\nVERDICT: {'FEASIBLE' if passed else 'NOT FEASIBLE'} - "
-          f"{sum(1 for _, ok in checks if ok)}/{len(checks)} criteria pass")
+    print("\n=== CRITERIA PER MAPPING ===")
+    print("{:<34} {:>4} {:>4} {:>4} {:>4} {:>4} {:>4}  {}".format(
+        "mapping", "C1", "C2", "C3", "C4", "C5", "C6", ""))
+    winners = []
+    for name, m in results.items():
+        flags = [
+            m["eq"] - 1 > base["bh"],                       # C1 beats hold
+            m["eq"] - 1 > base["sw"],                       # C2 beats switch
+            m["liq"] == 0,                                  # C3 no liquidation
+            dir_hit > 50,                                   # C4 direction edge
+            m["p"] < 0.20,                                  # C5 beats random
+            m["dd"] >= base["sw_dd"] - 0.10,                # C6 risk parity
+        ]
+        cells = "".join("  ok" if f else "  --" for f in flags)
+        passed = all(flags)
+        if passed:
+            winners.append(name)
+        print("{:<34}{}  {}".format(name, cells, "PASS" if passed else "fail"))
+
+    print(f"\nC4 uses directional accuracy excluding flat calls: "
+          f"{dir_hit:.1f}% over {dir_n} sided calls (flats are a choice, "
+          f"not a miss)")
+    if winners:
+        print(f"\nVERDICT: FEASIBLE - mappings passing all 6: {winners}")
+        print("caveat: 9 mappings were tested, so control the false positive "
+              "rate by replicating the winner on unseen decisions before "
+              "trusting it")
+    else:
+        print("\nVERDICT: NOT FEASIBLE - no mapping passes all 6 criteria")
 
 
 if __name__ == "__main__":

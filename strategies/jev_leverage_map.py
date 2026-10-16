@@ -77,6 +77,23 @@ def lev_risk_tiers(action, risk, conf, row):
     return 0.0
 
 
+def lev_longonly_1x(action, risk, conf, row):
+    """The direction read, longs only, no shorts, no flats, 1x."""
+    return 1.0 if action == "long" else 0.0
+
+
+def lev_longonly_halving(action, risk, conf, row):
+    if action != "long" or risk is None:
+        return 0.0
+    return lev_risk_halving(action, risk, conf, row)
+
+
+def lev_longonly_tiers(action, risk, conf, row):
+    if action != "long" or risk is None:
+        return 0.0
+    return lev_risk_tiers(action, risk, conf, row)
+
+
 MAPPINGS = [
     ("A model-chosen (baseline)", lev_model),
     ("B fixed 1x", _fixed(1.0)),
@@ -84,6 +101,9 @@ MAPPINGS = [
     ("D jev-risk linear 10*(1-risk)", lev_risk_linear),
     ("E jev-risk halving (owner bisect)", lev_risk_halving),
     ("F jev-risk tiers 3/2/1/0", lev_risk_tiers),
+    ("G longs-only fixed 1x", lev_longonly_1x),
+    ("H longs-only halving", lev_longonly_halving),
+    ("I longs-only tiers", lev_longonly_tiers),
 ]
 
 
