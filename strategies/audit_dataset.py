@@ -15,10 +15,17 @@ def load(name):
     p = DATA / f"{name}.csv"
     if not p.exists(): return None
     df = pd.read_csv(p)
-    # auto-detect time column (some charts use 'ts', others 'date')
-    tcol = "ts" if "ts" in df.columns else ("date" if "date" in df.columns else None)
+    # auto-detect time column (some charts use 'ts', others 'date'; the 15m
+    # Binance research charts use 'open_time' as epoch milliseconds)
+    tcol = next((c for c in ("ts", "date", "open_time") if c in df.columns), None)
     if tcol:
-        df[tcol] = pd.to_datetime(df[tcol], utc=True)
+        col = df[tcol]
+        if pd.api.types.is_numeric_dtype(col):
+            unit = "ms" if float(col.iloc[-1]) > 1e11 else "s"
+            col = pd.to_datetime(col, unit=unit, utc=True)
+        else:
+            col = pd.to_datetime(col, utc=True)
+        df[tcol] = col
         df = df.set_index(tcol).sort_index()
     return df
 
@@ -33,7 +40,18 @@ for name in charts:
     if df is None: continue
     idx = df.index
     # 1. gaps - monthly series naturally have ~30d gaps; daily should have <10d
-    gaps = (idx.to_series().diff().dt.days).dropna()
+    # Hardened 2026-10-18: one bad chart (half-written CSV, unparseable
+    # time col) must not kill the whole weekly audit - record CHECK and
+    # continue, same fail-soft family as the fetcher keeping old-but-valid
+    # files on network blips.
+    try:
+        if not isinstance(idx, pd.DatetimeIndex):
+            idx = pd.to_datetime(idx, utc=True)
+        gaps = (idx.to_series().diff().dt.days).dropna()
+    except Exception as e:
+        print(f"  {name:40s} rows={len(df):>7} AUDIT-ERROR {e} CHECK")
+        problems.append(name)
+        continue
     allowed = 45 if name in MONTHLY else 10
     if name == "fred_rrp":
         # RRP operations were sparse before the facility went daily (2013-14);
@@ -48,6 +66,13 @@ for name in charts:
     dups = idx.duplicated().sum()
     # 3. nulls
     nulls = int(df.isnull().sum().sum())
+    if name == "bn_metrics_15m_btc":
+        # Binance serves empty top-trader/taker ratio fields on scattered days
+        # (source-side; same quirk family as bn_lsr/bn_taker) - those columns'
+        # blanks are known, the null watch stays on the price/OI columns.
+        _known = [c for c in ("count_toptrader_long_short_ratio", "sum_toptrader_long_short_ratio",
+                              "count_long_short_ratio", "sum_taker_long_short_vol_ratio") if c in df.columns]
+        nulls -= int(df[_known].isnull().sum().sum())
     # 4. sanity: negative allowed for real-yield, us3m, wti (historical events)
     #    for the signed on-chain flow charts (an outflow IS negative) and for
     #    NUPL, which goes negative in bear phases by definition
