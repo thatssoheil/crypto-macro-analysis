@@ -1,11 +1,11 @@
 # Macro + Crypto Master Dataset
 
-Built: 2026-10-18T02:27:41.259519+00:00
+Built: 2026-10-18T09:14:19.662062+00:00
 
 | Chart | Rows | Span | Source |
 |---|---|---|---|
 | btcusd_daily_bitstamp | 5541 | 2011-08-18 00:00:00 -> 2026-10-18 00:00:00 | Bitstamp v2 ohlc |
-| btcusd_hourly_bitstamp | 132951 | 2011-08-18 12:00:00 -> 2026-10-18 02:00:00 | Bitstamp v2 ohlc |
+| btcusd_hourly_bitstamp | 132958 | 2011-08-18 12:00:00 -> 2026-10-18 09:00:00 | Bitstamp v2 ohlc |
 | ethusd_daily_bitstamp | 3351 | 2017-08-16 00:00:00 -> 2026-10-18 00:00:00 | Bitstamp v2 ohlc |
 | bi_hash-rate | 6491 | 2009-01-03 00:00:00 -> 2026-10-14 00:00:00 | blockchain.info API |
 | bi_difficulty | 6491 | 2009-01-03 00:00:00 -> 2026-10-14 00:00:00 | blockchain.info API |
@@ -14,7 +14,7 @@ Built: 2026-10-18T02:27:41.259519+00:00
 | bi_market-cap | 934825 | 2009-01-03 18:15:05 -> 2026-10-15 23:52:59 | blockchain.info API |
 | bi_total-bitcoins | 934821 | 2009-01-03 18:15:05 -> 2026-10-15 23:52:59 | blockchain.info API |
 | fear_greed | 3000 | 2026-10-18 -> 2018-08-01 | alternative.me |
-| dxy | 3773 | 2011-10-17 -> 2026-10-16 | Yahoo Finance |
+| dxy | 3772 | 2011-10-18 -> 2026-10-16 | Yahoo Finance |
 | us10y | 3771 | 2011-10-17 -> 2026-10-16 | Yahoo Finance |
 | us30y | 3771 | 2011-10-17 -> 2026-10-16 | Yahoo Finance |
 | us3m | 3771 | 2011-10-17 -> 2026-10-16 | Yahoo Finance |
@@ -22,10 +22,10 @@ Built: 2026-10-18T02:27:41.259519+00:00
 | sp500 | 3772 | 2011-10-17 -> 2026-10-16 | Yahoo Finance |
 | nasdaq | 3772 | 2011-10-17 -> 2026-10-16 | Yahoo Finance |
 | russell2000 | 3772 | 2011-10-17 -> 2026-10-16 | Yahoo Finance |
-| gold | 3772 | 2011-10-17 -> 2026-10-16 | Yahoo Finance |
-| silver | 3771 | 2011-10-17 -> 2026-10-16 | Yahoo Finance |
-| wti | 3772 | 2011-10-17 -> 2026-10-16 | Yahoo Finance |
-| copper | 3772 | 2011-10-17 -> 2026-10-16 | Yahoo Finance |
+| gold | 3771 | 2011-10-18 -> 2026-10-16 | Yahoo Finance |
+| silver | 3770 | 2011-10-18 -> 2026-10-16 | Yahoo Finance |
+| wti | 3771 | 2011-10-18 -> 2026-10-16 | Yahoo Finance |
+| copper | 3771 | 2011-10-18 -> 2026-10-16 | Yahoo Finance |
 | ecb_usd | 7116 | 2026-10-16 -> 1999-01-04 | ECB eurofxref-hist |
 | ecb_jpy | 7116 | 2026-10-16 -> 1999-01-04 | ECB eurofxref-hist |
 | ecb_cny | 5517 | 2026-10-16 -> 2005-04-01 | ECB eurofxref-hist |
@@ -94,12 +94,12 @@ Built: 2026-10-18T02:27:41.259519+00:00
 | tga_daily | 5284 | 2005-10-03 -> 2026-10-15 | Treasury FiscalData DTS operating cash balance (TGA, USD millions) |
 | dvol_btc | 2035 | 2021-03-24 -> 2026-10-18 | Deribit DVOL (daily close) (merged; 30d window per fetch) |
 | dvol_eth | 2035 | 2021-03-24 -> 2026-10-18 | Deribit DVOL (daily close) (merged; 30d window per fetch) |
-| bn_oi_btc | 2237 | 2020-09-01 -> 2026-10-16 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
-| bn_lsr_btc | 1917 | 2020-09-01 -> 2026-10-16 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
-| bn_taker_btc | 2107 | 2020-09-01 -> 2026-10-16 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
-| bn_oi_eth | 1781 | 2021-12-01 -> 2026-10-16 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
-| bn_lsr_eth | 1461 | 2021-12-01 -> 2026-10-16 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
-| bn_taker_eth | 1651 | 2021-12-01 -> 2026-10-16 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
+| bn_oi_btc | 2238 | 2020-09-01 -> 2026-10-17 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
+| bn_lsr_btc | 1918 | 2020-09-01 -> 2026-10-17 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
+| bn_taker_btc | 2108 | 2020-09-01 -> 2026-10-17 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
+| bn_oi_eth | 1782 | 2021-12-01 -> 2026-10-17 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
+| bn_lsr_eth | 1462 | 2021-12-01 -> 2026-10-17 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
+| bn_taker_eth | 1652 | 2021-12-01 -> 2026-10-17 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
 | bn_funding_btc | 2465 | 2020-01-01 -> 2026-09-30 | Binance monthly fundingRate (BTCUSDT, daily sums) (merged; 30d window per fetch) |
 | bn_funding_eth | 2465 | 2020-01-01 -> 2026-09-30 | Binance monthly fundingRate (ETHUSDT, daily sums) (merged; 30d window per fetch) |
 | gn_binance_inflow_btc | 33 | 2026-08-28 -> 2026-09-29 | Glassnode MCP /v1/metrics/transactions/transfers_volume_to_exchanges_sum [BTC] (merged; 30d window per fetch) |
