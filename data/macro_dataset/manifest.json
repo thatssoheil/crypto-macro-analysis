@@ -1,155 +1,155 @@
 {
-  "built": "2026-10-18T09:14:19.662062+00:00",
+  "built": "2026-10-25T02:15:43.750548+00:00",
   "charts": {
     "btcusd_daily_bitstamp": {
       "file": "btcusd_daily_bitstamp.csv",
-      "rows": 5541,
+      "rows": 5548,
       "source": "Bitstamp v2 ohlc",
-      "span": "2011-08-18 00:00:00 -> 2026-10-18 00:00:00"
+      "span": "2011-08-18 00:00:00 -> 2026-10-25 00:00:00"
     },
     "btcusd_hourly_bitstamp": {
       "file": "btcusd_hourly_bitstamp.csv",
-      "rows": 132958,
+      "rows": 133119,
       "source": "Bitstamp v2 ohlc",
-      "span": "2011-08-18 12:00:00 -> 2026-10-18 09:00:00"
+      "span": "2011-08-18 12:00:00 -> 2026-10-25 02:00:00"
     },
     "ethusd_daily_bitstamp": {
       "file": "ethusd_daily_bitstamp.csv",
-      "rows": 3351,
+      "rows": 3358,
       "source": "Bitstamp v2 ohlc",
-      "span": "2017-08-16 00:00:00 -> 2026-10-18 00:00:00"
+      "span": "2017-08-16 00:00:00 -> 2026-10-25 00:00:00"
     },
     "bi_hash-rate": {
       "file": "bi_hash-rate.csv",
-      "rows": 6491,
+      "rows": 6501,
       "source": "blockchain.info API",
-      "span": "2009-01-03 00:00:00 -> 2026-10-14 00:00:00"
+      "span": "2009-01-03 00:00:00 -> 2026-10-24 00:00:00"
     },
     "bi_difficulty": {
       "file": "bi_difficulty.csv",
-      "rows": 6491,
+      "rows": 6501,
       "source": "blockchain.info API",
-      "span": "2009-01-03 00:00:00 -> 2026-10-14 00:00:00"
+      "span": "2009-01-03 00:00:00 -> 2026-10-24 00:00:00"
     },
     "bi_n-unique-addresses": {
       "file": "bi_n-unique-addresses.csv",
-      "rows": 6463,
+      "rows": 6473,
       "source": "blockchain.info API",
-      "span": "2009-01-03 00:00:00 -> 2026-10-14 00:00:00"
+      "span": "2009-01-03 00:00:00 -> 2026-10-24 00:00:00"
     },
     "bi_n-transactions": {
       "file": "bi_n-transactions.csv",
-      "rows": 6477,
+      "rows": 6487,
       "source": "blockchain.info API",
-      "span": "2009-01-17 00:00:00 -> 2026-10-14 00:00:00"
+      "span": "2009-01-17 00:00:00 -> 2026-10-24 00:00:00"
     },
     "bi_market-cap": {
       "file": "bi_market-cap.csv",
-      "rows": 934825,
+      "rows": 935695,
       "source": "blockchain.info API",
-      "span": "2009-01-03 18:15:05 -> 2026-10-15 23:52:59"
+      "span": "2009-01-03 18:15:05 -> 2026-10-24 08:34:19"
     },
     "bi_total-bitcoins": {
       "file": "bi_total-bitcoins.csv",
-      "rows": 934821,
+      "rows": 935691,
       "source": "blockchain.info API",
-      "span": "2009-01-03 18:15:05 -> 2026-10-15 23:52:59"
+      "span": "2009-01-03 18:15:05 -> 2026-10-24 08:34:19"
     },
     "fear_greed": {
       "file": "fear_greed.csv",
       "rows": 3000,
       "source": "alternative.me",
-      "span": "2026-10-18 -> 2018-08-01"
+      "span": "2026-10-25 -> 2018-08-08"
     },
     "dxy": {
       "file": "dxy.csv",
-      "rows": 3772,
+      "rows": 3773,
       "source": "Yahoo Finance",
-      "span": "2011-10-18 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "us10y": {
       "file": "us10y.csv",
       "rows": 3771,
       "source": "Yahoo Finance",
-      "span": "2011-10-17 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "us30y": {
       "file": "us30y.csv",
       "rows": 3771,
       "source": "Yahoo Finance",
-      "span": "2011-10-17 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "us3m": {
       "file": "us3m.csv",
       "rows": 3771,
       "source": "Yahoo Finance",
-      "span": "2011-10-17 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "vix": {
       "file": "vix.csv",
       "rows": 3774,
       "source": "Yahoo Finance",
-      "span": "2011-10-17 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "sp500": {
       "file": "sp500.csv",
       "rows": 3772,
       "source": "Yahoo Finance",
-      "span": "2011-10-17 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "nasdaq": {
       "file": "nasdaq.csv",
       "rows": 3772,
       "source": "Yahoo Finance",
-      "span": "2011-10-17 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "russell2000": {
       "file": "russell2000.csv",
       "rows": 3772,
       "source": "Yahoo Finance",
-      "span": "2011-10-17 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "gold": {
       "file": "gold.csv",
-      "rows": 3771,
+      "rows": 3772,
       "source": "Yahoo Finance",
-      "span": "2011-10-18 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "silver": {
       "file": "silver.csv",
-      "rows": 3770,
+      "rows": 3771,
       "source": "Yahoo Finance",
-      "span": "2011-10-18 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "wti": {
       "file": "wti.csv",
-      "rows": 3771,
+      "rows": 3772,
       "source": "Yahoo Finance",
-      "span": "2011-10-18 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "copper": {
       "file": "copper.csv",
-      "rows": 3771,
+      "rows": 3772,
       "source": "Yahoo Finance",
-      "span": "2011-10-18 -> 2026-10-16"
+      "span": "2011-10-24 -> 2026-10-23"
     },
     "ecb_usd": {
       "file": "ecb_usd.csv",
-      "rows": 7116,
+      "rows": 7121,
       "source": "ECB eurofxref-hist",
-      "span": "2026-10-16 -> 1999-01-04"
+      "span": "2026-10-23 -> 1999-01-04"
     },
     "ecb_jpy": {
       "file": "ecb_jpy.csv",
-      "rows": 7116,
+      "rows": 7121,
       "source": "ECB eurofxref-hist",
-      "span": "2026-10-16 -> 1999-01-04"
+      "span": "2026-10-23 -> 1999-01-04"
     },
     "ecb_cny": {
       "file": "ecb_cny.csv",
-      "rows": 5517,
+      "rows": 5522,
       "source": "ECB eurofxref-hist",
-      "span": "2026-10-16 -> 2005-04-01"
+      "span": "2026-10-23 -> 2005-04-01"
     },
     "fred_us_m2": {
       "file": "fred_us_m2.csv",
@@ -159,45 +159,45 @@
     },
     "fred_fed_balance_sheet": {
       "file": "fred_fed_balance_sheet.csv",
-      "rows": 1244,
+      "rows": 1245,
       "source": "FRED WALCL",
-      "span": "2002-12-18 -> 2026-10-14"
+      "span": "2002-12-18 -> 2026-10-21"
     },
     "fred_fed_funds_eff": {
       "file": "fred_fed_funds_eff.csv",
-      "rows": 26405,
+      "rows": 26412,
       "source": "FRED DFF",
-      "span": "1954-07-01 -> 2026-10-15"
+      "span": "1954-07-01 -> 2026-10-22"
     },
     "fred_us2y": {
       "file": "fred_us2y.csv",
-      "rows": 12590,
+      "rows": 12595,
       "source": "FRED DGS2",
-      "span": "1976-06-01 -> 2026-10-15"
+      "span": "1976-06-01 -> 2026-10-22"
     },
     "fred_us10y_fred": {
       "file": "fred_us10y_fred.csv",
-      "rows": 16182,
+      "rows": 16187,
       "source": "FRED DGS10",
-      "span": "1962-01-02 -> 2026-10-15"
+      "span": "1962-01-02 -> 2026-10-22"
     },
     "fred_us30y_fred": {
       "file": "fred_us30y_fred.csv",
-      "rows": 12412,
+      "rows": 12417,
       "source": "FRED DGS30",
-      "span": "1977-02-15 -> 2026-10-15"
+      "span": "1977-02-15 -> 2026-10-22"
     },
     "fred_breakeven10y": {
       "file": "fred_breakeven10y.csv",
-      "rows": 5952,
+      "rows": 5957,
       "source": "FRED T10YIE",
-      "span": "2003-01-02 -> 2026-10-16"
+      "span": "2003-01-02 -> 2026-10-23"
     },
     "fred_real_yield10y": {
       "file": "fred_real_yield10y.csv",
-      "rows": 5951,
+      "rows": 5956,
       "source": "FRED DFII10",
-      "span": "2003-01-02 -> 2026-10-15"
+      "span": "2003-01-02 -> 2026-10-22"
     },
     "fred_cpi": {
       "file": "fred_cpi.csv",
@@ -219,9 +219,9 @@
     },
     "fred_jobless_claims": {
       "file": "fred_jobless_claims.csv",
-      "rows": 3119,
+      "rows": 3120,
       "source": "FRED ICSA",
-      "span": "1967-01-07 -> 2026-10-10"
+      "span": "1967-01-07 -> 2026-10-17"
     },
     "fred_nonfarm_payrolls": {
       "file": "fred_nonfarm_payrolls.csv",
@@ -233,31 +233,31 @@
       "file": "fred_hy_spread.csv",
       "rows": 786,
       "source": "FRED BAMLH0A0HYM2",
-      "span": "2023-10-17 -> 2026-10-15"
+      "span": "2023-10-24 -> 2026-10-22"
     },
     "fred_ig_spread": {
       "file": "fred_ig_spread.csv",
       "rows": 785,
       "source": "FRED BAMLC0A0CM",
-      "span": "2023-10-17 -> 2026-10-15"
+      "span": "2023-10-24 -> 2026-10-22"
     },
     "eth_tvl_defillama": {
       "file": "eth_tvl_defillama.csv",
-      "rows": 3309,
+      "rows": 3316,
       "source": "DefiLlama historicalChainTvl/Ethereum",
-      "span": "2017-09-27 -> 2026-10-18"
+      "span": "2017-09-27 -> 2026-10-25"
     },
     "ethbtc_daily_bitstamp": {
       "file": "ethbtc_daily_bitstamp.csv",
-      "rows": 3351,
+      "rows": 3358,
       "source": "Bitstamp v2 ohlc",
-      "span": "2017-08-16 00:00:00 -> 2026-10-18 00:00:00"
+      "span": "2017-08-16 00:00:00 -> 2026-10-25 00:00:00"
     },
     "stablecoin_total_liquidity": {
       "file": "stablecoin_total_liquidity.csv",
-      "rows": 3246,
+      "rows": 3253,
       "source": "DefiLlama stablecoincharts/all",
-      "span": "2017-11-29 -> 2026-10-18"
+      "span": "2017-11-29 -> 2026-10-25"
     },
     "gn_exchange_netflow_btc": {
       "file": "gn_exchange_netflow_btc.csv",
@@ -513,69 +513,69 @@
     },
     "fred_rrp": {
       "file": "fred_rrp.csv",
-      "rows": 3348,
+      "rows": 3353,
       "source": "FRED RRPONTSYD",
-      "span": "2003-02-07 -> 2026-10-16"
+      "span": "2003-02-07 -> 2026-10-23"
     },
     "fred_tga": {
       "file": "fred_tga.csv",
-      "rows": 1244,
+      "rows": 1245,
       "source": "FRED WTREGEN",
-      "span": "2002-12-18 -> 2026-10-14"
+      "span": "2002-12-18 -> 2026-10-21"
     },
     "tga_daily": {
       "file": "tga_daily.csv",
-      "rows": 5284,
+      "rows": 5289,
       "source": "Treasury FiscalData DTS operating cash balance (TGA, USD millions)",
-      "span": "2005-10-03 -> 2026-10-15"
+      "span": "2005-10-03 -> 2026-10-22"
     },
     "dvol_btc": {
       "file": "dvol_btc.csv",
-      "rows": 2035,
+      "rows": 2042,
       "source": "Deribit DVOL (daily close) (merged; 30d window per fetch)",
-      "span": "2021-03-24 -> 2026-10-18"
+      "span": "2021-03-24 -> 2026-10-25"
     },
     "dvol_eth": {
       "file": "dvol_eth.csv",
-      "rows": 2035,
+      "rows": 2042,
       "source": "Deribit DVOL (daily close) (merged; 30d window per fetch)",
-      "span": "2021-03-24 -> 2026-10-18"
+      "span": "2021-03-24 -> 2026-10-25"
     },
     "bn_oi_btc": {
       "file": "bn_oi_btc.csv",
-      "rows": 2238,
+      "rows": 2244,
       "source": "Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch)",
-      "span": "2020-09-01 -> 2026-10-17"
+      "span": "2020-09-01 -> 2026-10-23"
     },
     "bn_lsr_btc": {
       "file": "bn_lsr_btc.csv",
-      "rows": 1918,
+      "rows": 1924,
       "source": "Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch)",
-      "span": "2020-09-01 -> 2026-10-17"
+      "span": "2020-09-01 -> 2026-10-23"
     },
     "bn_taker_btc": {
       "file": "bn_taker_btc.csv",
-      "rows": 2108,
+      "rows": 2114,
       "source": "Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch)",
-      "span": "2020-09-01 -> 2026-10-17"
+      "span": "2020-09-01 -> 2026-10-23"
     },
     "bn_oi_eth": {
       "file": "bn_oi_eth.csv",
-      "rows": 1782,
+      "rows": 1788,
       "source": "Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch)",
-      "span": "2021-12-01 -> 2026-10-17"
+      "span": "2021-12-01 -> 2026-10-23"
     },
     "bn_lsr_eth": {
       "file": "bn_lsr_eth.csv",
-      "rows": 1462,
+      "rows": 1468,
       "source": "Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch)",
-      "span": "2021-12-01 -> 2026-10-17"
+      "span": "2021-12-01 -> 2026-10-23"
     },
     "bn_taker_eth": {
       "file": "bn_taker_eth.csv",
-      "rows": 1652,
+      "rows": 1658,
       "source": "Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch)",
-      "span": "2021-12-01 -> 2026-10-17"
+      "span": "2021-12-01 -> 2026-10-23"
     },
     "bn_funding_btc": {
       "file": "bn_funding_btc.csv",
