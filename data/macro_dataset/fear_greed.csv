@@ -1,4 +1,11 @@
 date,value,classification
+2026-11-01,34,Fear
+2026-10-31,30,Fear
+2026-10-30,30,Fear
+2026-10-29,51,Neutral
+2026-10-28,51,Neutral
+2026-10-27,48,Neutral
+2026-10-26,50,Neutral
 2026-10-25,54,Neutral
 2026-10-24,51,Neutral
 2026-10-23,50,Neutral
@@ -2992,10 +2999,3 @@ date,value,classification
 2018-08-17,19,Extreme Fear
 2018-08-16,21,Extreme Fear
 2018-08-15,18,Extreme Fear
-2018-08-14,16,Extreme Fear
-2018-08-13,21,Extreme Fear
-2018-08-12,18,Extreme Fear
-2018-08-11,18,Extreme Fear
-2018-08-10,21,Extreme Fear
-2018-08-09,19,Extreme Fear
-2018-08-08,23,Extreme Fear
