@@ -58,6 +58,7 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
 | `strategies/macro_backtest_v2.py` | v2 backtest (200d-MA trend filter). |
 | `strategies/build_btc_dataset.py` | Standalone BTC price builder (blockchain.info). |
 | `strategies/backfill_derivatives.py` | Derivatives deep backfill (Deribit DVOL + Binance archive positioning/funding). Re-runnable; skips dates already present. Runs as part of `refresh.sh`. |
+| `strategies/liquidity_map.py` | Modelled liquidation heatmap for BTC perps, free data only (no vendor API). Cohort model: each hour's traded volume is the weight of positions opened then, spread over low/mid/high, multiplied across a PUBLISHED leverage mix, run through the margin formula, decayed over 14 days and removed once price trades through the level. Prints the strongest shelves above (short liquidations) and below (long liquidations) plus an ASCII price-by-time grid. `--calibrate` A/B tests it against a permuted-volume null of itself using measured Gate liquidation flow. |
 | `strategies/futures_vs_spot.py` | Futures-vs-spot leverage study (funding drag, liquidation math, constant vs regime-switched leveraged longs). Stateless; regenerate for numbers. |
 | `scripts/refresh.sh` | On-demand refresh runner: fetch latest data (charts append daily) + re-run engine + audit. Run when the user asks for an update. `--check` = status only. |
 | `data/macro_dataset/` | 98 charts, one CSV per series + `manifest.json` (source/span/rows per chart) + auto-generated README. |
@@ -106,6 +107,8 @@ cd ~/projects/crypto-macro-analysis
 ./.venv/bin/python strategies/macro_backtest_deep.py   # deep-history backtest -> stdout
 ./.venv/bin/python strategies/build_macro_dataset.py   # refresh dataset (slow, network)
 ./.venv/bin/python strategies/dd_protection_sweep.py   # DD layer sweep -> stdout
+./.venv/bin/python strategies/liquidity_map.py          # modelled liquidation shelves -> stdout
+./.venv/bin/python strategies/liquidity_map.py --calibrate   # A/B vs a permuted-volume null
 ```
 
 - Use `./.venv/bin/python` directly. Do NOT `source .venv/bin/activate` from a
@@ -180,6 +183,19 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
   `merge_csv()` (merge by date, new wins) and never overwritten. The committed CSV
   is the history; a gap longer than 30 days is permanent. Do not "fix" a short
   gn_* chart by refetching - it cannot be backfilled for free.
+- **Futures data from this box (2026-11-01):** Binance and Bybit public endpoints are geo-blocked
+  (AWS/CloudFront country block); OKX, Gate and Deribit answer keyless. `liquidity_map.py` uses OKX
+  hourly candles, Gate `contract_stats` (open interest, mark price, hourly long/short liquidation
+  USD, 41 days hourly) and edgeornet for aggregate Binance+Bybit open interest. Coinglass's
+  heatmap API refuses without a key and its heatmap endpoints sit on the Professional tier, so
+  never build on it. Free intraday history is short everywhere: edgeornet keeps 7 days hourly and
+  30 days at 4-hourly, OKX 30 days hourly, Coinalyze deletes intraday daily. Anything longer has to
+  be accumulated locally.
+- **The liquidation heatmap is a model, not a feed.** Levels come from open interest, an assumed
+  leverage mix and the margin formula; they are not orders or stops. `--calibrate` in
+  `liquidity_map.py` scores the shelves against a permuted-volume null using measured Gate
+  liquidations: shelf locations reproduce an independent vendor model within about 1 percent, but
+  the predictive edge over the null is weak and one-sided (downside), so use it as context.
 - Glassnode's endpoint is Cloudflare-fronted: bare UAs get 403 "Just a moment",
   full browser headers (see `GN_HEADERS`) get 200. A Glassnode failure is
   fail-soft (WARN, not `FAILED`) so it cannot degrade the weekly refresh.
