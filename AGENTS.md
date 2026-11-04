@@ -40,6 +40,14 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
    as the drawdown reducer and expect no return from it; any length chosen on one window
    is a curve fit until it survives a holdout. Reproduce:
    `strategies/ma_length_holdout.py` (criteria frozen in its docstring before the run).
+
+3c. **There is no profit-zone floor, and position size is a linear trade, not a fix.**
+   Measured on both windows: capping giveback at about -50% costs roughly 80% of
+   buy-and-hold wealth; capping it at -30% costs about 95%. The 200-day switch is the only
+   nearly-free point on that frontier (-83% to -67% drawdown for 0.94x/1.03x wealth).
+   Reproduce: `strategies/ma_drawdown_holdout.py` and `strategies/exposure_holdout.py`.
+   Never promise a low-drawdown rule to the owner without quoting the wealth it costs.
+
 4. **Every claim needs A/B evidence.** The owner demands a backtest with vs
    without any proposed change before accepting it.
 5. **Secrets live in `.env` (gitignored).** Never commit `.env` or any real key.
