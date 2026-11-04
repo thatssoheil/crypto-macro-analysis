@@ -16,16 +16,21 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
 1. **Analysis window is 2017-2026 only.** Every fetched series must have data
    there (F&G starts 2018-05, stablecoin aggregate 2017-11, HY/IG spreads 2023-08).
    Pre-2017 BTC is too volatile for drawdown-protection tests.
-2. **The 200d-MA trend filter on BTC daily IS the validated edge:** it beats
-   buy-and-hold across every window tested (2011-2026 and 2017-2026) with a
-   much lower max drawdown. Reproduce: `strategies/macro_backtest_deep.py`.
-   (The "+1,111%" figure from weekly sampling is the known artifact - always
-   use true daily data, `sampled=false`.)
-3. **The v4 multi-signal composite does NOT beat the 200d-MA filter** as an
-   execution switch (tested, A/B'd: it whipsaws - hundreds of flips vs ~70 for
-   the MA). Hysteresis trims the drawdown but it stays a risk-trimmer, not a
-   return-driver. Use the score as CONTEXT, not the switch. Do NOT re-weight
-   the engine signals without an A/B backtest proving the improvement.
+2. **The 200d-MA trend filter is a DRAWDOWN reducer, not a return edge.** Rewritten
+   2026-11-04 after an adversarial audit found that `macro_backtest_deep.py` and
+   `macro_backtest_v2.py` decided the position on the same close whose return they then
+   earned (same-day lookahead). With the lag fixed: 2017-2026 the filter ends at $730,547
+   versus $777,806 buy-and-hold (-67.2% max drawdown versus -83.4%), and the 2019-2021
+   window it LOSES ($44,038 versus $120,871). It never "beats buy-and-hold in every
+   window". Reproduce: `strategies/macro_backtest_deep.py` (now lagged).
+3. **Neither the composite nor the filter is a proven return engine.** Fixed 2026-11-04:
+   the composite replay had three growth signals (stablecoins, M2, Fed balance sheet)
+   encoded backwards, inverting 5.5 of 19 weight. With that repaired and the 200-day
+   baseline warmed on full history, 2017-2026 gives: composite score>0 $1,165,574
+   (-69.5% drawdown, 110 flips), composite score>=+0.5 $486,999, 200-day filter $730,547,
+   buy-and-hold $777,806. The score>0 arm now leads, but its threshold was not
+   pre-declared - treat it as a hypothesis requiring an out-of-sample A/B, not a finding.
+   Use the score as CONTEXT, never as an order. Do NOT re-weight signals without an A/B.
    Reproduce: `strategies/macro_backtest_v4.py`.
 4. **Every claim needs A/B evidence.** The owner demands a backtest with vs
    without any proposed change before accepting it.

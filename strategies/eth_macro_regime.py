@@ -88,9 +88,10 @@ def main():
     dxy = load("dxy")
     if dxy is not None:
         sc, r = slope_score(dxy, 200)
-        signals["dxy"] = sc
+        # Firm dollar is risk-off. Fixed 2026-11-04 (was +1 for a firm dollar).
+        signals["dxy"] = -sc
         weights["dxy"] = 1.5
-        reasons["dxy"] = f"DXY {r}"
+        reasons["dxy"] = f"DXY {r} ({'firm - headwind' if sc > 0 else 'soft - tailwind' if sc < 0 else 'at trend'})"
 
     m2 = load("fred_us_m2", col="value")
     if m2 is not None:
@@ -104,13 +105,16 @@ def main():
 
     fbs = load("fred_fed_balance_sheet", col="value")
     if fbs is not None:
+        # Fixed 2026-11-04: WALCL is weekly, so iloc[-61] was a 420-day change labelled 60d.
+        cut = fbs.index[-1] - pd.Timedelta(days=60) if isinstance(fbs.index, pd.DatetimeIndex) else None
+        base = fbs.loc[:cut] if cut is not None else fbs.iloc[:-61]
         cur_fbs = fbs.iloc[-1]
-        prev_fbs = fbs.iloc[-61] if len(fbs) > 61 else fbs.iloc[0]
+        prev_fbs = base.iloc[-1] if len(base) else fbs.iloc[0]
         chg_fbs = (cur_fbs / prev_fbs - 1) * 100
         sc = 1 if chg_fbs > 1.0 else (-1 if chg_fbs < -1.0 else 0)
         signals["fed_bs"] = sc
         weights["fed_bs"] = 1.5
-        reasons["fed_bs"] = f"Fed balance sheet 60d chg {chg_fbs:+.1f}% ({'expanding (QE)' if sc == 1 else ('contracting (QT)' if sc == -1 else 'neutral')})"
+        reasons["fed_bs"] = f"Fed balance sheet 60d chg {chg_fbs:+.1f}% ({'expanding' if sc == 1 else ('contracting' if sc == -1 else 'flat')})"
 
     # B. RISK APPETITE (1.5)
     vix = load("vix")

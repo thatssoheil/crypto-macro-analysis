@@ -7,11 +7,13 @@ cashing** — hold in risk-on regimes, move to cash on regime shift, rebuy on th
 > engine math, backtest conventions, and data pitfalls (operational contract).
 > README.md is the user-facing overview.
 
-**The core validated edge:** a 200-day moving-average trend filter on BTC daily
-beats buy-and-hold over the 2017-2026 analysis window with a much lower max
-drawdown (reproduce: `./.venv/bin/python strategies/macro_backtest_deep.py`).
-A 50d-MA-or-DD-20% breaker caps the worst experienced drawdown around -20%
-(reproduce: `./.venv/bin/python strategies/dd_protection_sweep.py`).
+**What the tests actually support (corrected 2026-11-04):** a 200-day moving-average
+trend filter on BTC daily reduces the worst drawdown from -83.4% to -67.2% over
+2017-2026 at roughly zero net return cost ($730,547 versus $777,806 buy-and-hold,
+reproduce: `./.venv/bin/python strategies/macro_backtest_deep.py`). It is insurance,
+not an edge, and it loses outright in the 2019-2021 window. A 50d-MA-or-DD-20%
+breaker caps the worst drawdown near -53% (not -20%), and costs about 40% of terminal
+wealth (reproduce: `./.venv/bin/python strategies/dd_protection_sweep.py`).
 
 **Stateless by design:** the repo stores code + fetched data only. Every run
 regenerates results fresh from the dataset and prints them to stdout - nothing
@@ -174,9 +176,9 @@ Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 
 | Finding | Reproduce with |
 |------|--------|
-| 200d-MA trend filter beats buy-and-hold (2017-26, lower DD) | `strategies/macro_backtest_deep.py` |
-| v4 composite does NOT beat the MA filter; hysteresis trims DD | `strategies/macro_backtest_v4.py` |
-| 50d OR DD-20% breaker = best drawdown protection | `strategies/dd_protection_sweep.py` |
+| 200d-MA filter cuts max drawdown -83% to -67% at neutral return cost; it is NOT a return edge | `strategies/macro_backtest_deep.py` |
+| v4 composite (score>0) leads on the repaired replay, but in-sample; hysteresis trims DD | `strategies/macro_backtest_v4.py` |
+| 50d OR DD-20% breaker: max drawdown about -53%, terminal wealth about 0.6x buy-and-hold | `strategies/dd_protection_sweep.py` |
 | Fear & Greed is a risk-trimmer, not a return-driver | `strategies/fng_ab_test.py` |
 | Macro leads tops by ~8-11 months (M2/DXY warning cluster) | `strategies/lead_time_analysis.py` |
 | Data integrity + signal-correctness audit | `strategies/audit_dataset.py` |

@@ -56,22 +56,26 @@ fi
 echo "=== [1/4] fetch latest data ==="
 # build_macro_dataset.py appends whatever is new since the last fetch.
 # Keyless sources work everywhere; FRED series run when FRED_API_KEY is set.
-"$PY" "$REPO_DIR/strategies/build_macro_dataset.py" 2>&1 | tail -4 || { echo "fetch failed (network?)" >&2; exit 1; }
+"$PY" "$REPO_DIR/strategies/build_macro_dataset.py" 2>&1 | tail -12 || { echo "fetch failed (network?)" >&2; exit 1; }
 # Derivatives deep file (funding + daily metrics + DVOL): append-only, skips
 # existing dates, so it only fetches what is new. Fail-soft.
-"$PY" "$REPO_DIR/strategies/backfill_derivatives.py" 2>&1 | tail -2 || echo "derivatives backfill failed (non-fatal)" >&2
+"$PY" "$REPO_DIR/strategies/backfill_derivatives.py" 2>&1 | tail -4 || echo "derivatives backfill failed (non-fatal)" >&2
 
 echo "=== [2/4] regime engine (stateless: prints verdict, saves nothing) ==="
-"$PY" "$REPO_DIR/strategies/macro_regime_v3.py" 2>&1 | tail -4
+# Fixed 2026-11-04: this used to be `| tail -4`, which printed the last three reason rows
+# and the phase line and NEVER the score or the action. The whole verdict lives in the
+# first 40 lines. Never truncate the output the owner is supposed to act on.
+"$PY" "$REPO_DIR/strategies/macro_regime_v3.py"
 
 echo "=== [3/4] audit ==="
-"$PY" "$REPO_DIR/strategies/audit_dataset.py" 2>&1 | tail -2
+# Fixed 2026-11-04: `| tail -2` hid the list of charts needing review.
+"$PY" "$REPO_DIR/strategies/audit_dataset.py"
 
 echo "=== [4/4] on-chain confidence (live vs point-in-time) ==="
 # The live gn_* series is a best current estimate that gets restated; the _pit twin is
 # what was knowable at the time. A flow read is only stated as a direction when the two
 # agree - see strategies/onchain_confidence.py.
-"$PY" "$REPO_DIR/strategies/onchain_confidence.py" 2>&1 | tail -4
+"$PY" "$REPO_DIR/strategies/onchain_confidence.py" 2>&1 | tail -8
 
 echo
 echo "=== DONE. Verdict above (printed to stdout, not saved). ==="

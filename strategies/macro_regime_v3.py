@@ -13,6 +13,7 @@ Output: full report to stdout (stateless - nothing persisted, re-run to regenera
 No data fetch - consumes the local dataset only. Re-run anytime (cadence: weekly/mo).
 """
 import csv
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 import pandas as pd
@@ -50,6 +51,20 @@ def slope_score(df, col="close", n=200):
     if cur < ma: return -1, f"{cur:.2f} below {n}d MA {ma:.2f}"
     return 0, f"{cur:.2f} at MA {ma:.2f}"
 
+
+# Max tolerated age in days per input, by the cadence the source actually publishes on AND
+# the cadence this dataset is actually refreshed at (on demand, weekly bot). A daily series
+# legitimately sits 5-7 days old between Sunday refreshes, so the daily limit is 10, not 3:
+# a gate that fires every Tuesday is a gate everyone learns to ignore.
+FRESH_LIMITS = {
+    "curve": 10, "stablecoin": 10, "dxy": 10, "m2": 75, "fed_bs": 14, "vix": 10,
+    "spx": 10, "credit": 12, "btc_ma": 10, "fng": 10, "hash": 10, "real_yield": 12,
+    "cpi": 75, "gold": 10,
+}
+# If any of these is stale the engine refuses to score at all: they are the backbone of
+# the verdict, and stale values there silently invert a decision instead of degrading it.
+CORE_INPUTS = ("btc_ma", "vix", "spx", "dxy", "curve")
+
 def main():
     print("=== MACRO REGIME v4 (full FRED backbone) ===")
     btc = load("btcusd_daily_bitstamp", "ts")
@@ -83,12 +98,15 @@ def main():
         signals["stablecoin"] = 1 if g > 0.02 else (-1 if g < -0.02 else 0)
         weights["stablecoin"] = 2.0
         reasons.append(f"stablecoin cap 30d chg {g*100:+.1f}% ({'liquidity in' if g>0.02 else 'draining' if g<-0.02 else 'flat'})")
-    # 3. DXY trend (weaker $ = risk-on)
+    # 3. DXY trend (a FIRM dollar is risk-off: forward BTC returns are 4.3% over 60 days
+    # with the dollar above its 200d MA versus 22.0% with it below, 2017-2026. The signal
+    # therefore takes the NEGATIVE of the above/below score. Fixed 2026-11-04: this vote
+    # used to read +1 for a firm dollar, which contradicted its own stated intent.)
     if dxy is not None:
         sc, r = slope_score(dxy)
-        signals["dxy"] = sc
+        signals["dxy"] = -sc
         weights["dxy"] = 1.5
-        reasons.append(f"DXY {r}")
+        reasons.append(f"DXY {r} ({'firm - headwind' if sc > 0 else 'soft - tailwind' if sc < 0 else 'at trend'})")
     # 4. M2 YoY growth (liquidity fuel - the macro backbone)
     if m2 is not None and len(m2) > 13:
         yoy = m2["value"].iloc[-1] / m2["value"].iloc[-13] - 1
@@ -96,11 +114,19 @@ def main():
         weights["m2"] = 2.0
         reasons.append(f"M2 YoY {yoy*100:+.1f}% ({'expanding' if yoy>0.04 else 'contracting' if yoy<0.01 else 'neutral'})")
     # 5. Fed balance sheet trend (QE = risk-on, QT = risk-off)
-    if fed_bs is not None and len(fed_bs) > 60:
-        chg = fed_bs["value"].iloc[-1] / fed_bs["value"].iloc[-61] - 1
-        signals["fed_bs"] = 1 if chg > 0.01 else (-1 if chg < -0.01 else 0)
-        weights["fed_bs"] = 1.5
-        reasons.append(f"Fed balance sheet 60d chg {chg*100:+.1f}% ({'expanding (QE)' if chg>0.01 else 'contracting (QT)' if chg<-0.01 else 'flat'})")
+    # Fixed 2026-11-04: WALCL is a WEEKLY series, so iloc[-61] was a 420-day change printed
+    # as "60d". Now measured on the calendar: the last observation at or before 60 days ago.
+    if fed_bs is not None and len(fed_bs) > 12:
+        cut = fed_bs.index[-1] - pd.Timedelta(days=60)
+        base = fed_bs.loc[:cut, "value"]
+        if len(base) == 0:
+            signals["fed_bs"] = 0; weights["fed_bs"] = 1.5
+            reasons.append("Fed balance sheet 60d chg n/a (insufficient history)")
+        else:
+            chg = fed_bs["value"].iloc[-1] / base.iloc[-1] - 1
+            signals["fed_bs"] = 1 if chg > 0.01 else (-1 if chg < -0.01 else 0)
+            weights["fed_bs"] = 1.5
+            reasons.append(f"Fed balance sheet 60d chg {chg*100:+.1f}% ({'expanding' if chg>0.01 else 'contracting' if chg<-0.01 else 'flat'})")
 
     # ---- B. RISK APPETITE (weight 1.5) ----
     # 6. VIX regime (low vol = risk-on)
@@ -163,6 +189,39 @@ def main():
         weights["gold"] = 0.5
         reasons.append(f"gold {r}")
 
+    # ---- INPUT HEALTH (freshness gate, added 2026-11-04) ----
+    # Every loader only tests existence. A series that stops updating therefore reads as
+    # valid forever, and the audit cannot see it because it measures gaps BETWEEN rows.
+    # This block makes age visible and makes a stale CORE input a hard stop.
+    frames = {"curve": us10y, "stablecoin": stab, "dxy": dxy, "m2": m2, "fed_bs": fed_bs,
+              "vix": vix, "spx": spx, "credit": hy, "btc_ma": btc, "fng": fng_df,
+              "hash": hash_df, "real_yield": real_y, "cpi": cpi, "gold": gold}
+    now_utc = pd.Timestamp.now(tz="UTC")
+    health, stale_core = [], []
+    for key, frame in frames.items():
+        if frame is None or len(frame) == 0:
+            health.append((key, "-", "-", "MISSING"))
+            if key in CORE_INPUTS: stale_core.append(key)
+            continue
+        last = frame.index[-1]
+        age = int((now_utc - last).days)
+        status = "OK" if age <= FRESH_LIMITS.get(key, 7) else "STALE"
+        health.append((key, last.strftime("%Y-%m-%d"), str(age), status))
+        if status == "STALE" and key in CORE_INPUTS:
+            stale_core.append(key)
+
+    print("\n=== INPUT HEALTH (as of %s) ===" % now_utc.strftime("%Y-%m-%d %H:%M UTC"))
+    for key, d, age, status in health:
+        print(f"  {key:12s} {d:12s} {age:>4s}d  {status}")
+    missing = [k for k, _, _, s in health if s == "MISSING"]
+    if stale_core or len(signals) < 14:
+        print(f"\nREFUSING TO SCORE: stale/missing core input -> {', '.join(stale_core) or 'none'}"
+              f" | signals {len(signals)}/14 | missing {', '.join(missing) or 'none'}")
+        print("A stale core input does not degrade this verdict, it inverts it. Fix the source,")
+        print("or re-run with --allow-stale-core to see the degraded read explicitly.")
+        if "--allow-stale-core" not in sys.argv:
+            raise SystemExit(2)
+
     # ---- Aggregate ----
     total_w = sum(weights.values())
     score = sum(signals[k] * weights[k] for k in signals) / total_w * 3  # normalize to -3..+3
@@ -178,8 +237,13 @@ def main():
     for r in reasons: print(f"  - {r}")
     print(f"  ACTION: {action}")
 
-    # Phase label for the phasic cash cycle
-    if score >= 0.5: phase = "PHASE 1: RISK-ON (hold + accumulate)"
+    # Phase label for the phasic cash cycle. The instruction is banded, not fixed: at a
+    # score of +0.5 to +1.4 the engine is holding, NOT deploying. Fixed 2026-11-04: this
+    # label used to read "hold + accumulate" for every PHASE 1 day, including days when the
+    # verdict two lines above said "no aggressive buys".
+    if score >= 0.5:
+        phase = ("PHASE 1: RISK-ON (hold + accumulate)" if score >= 1.5
+                 else "PHASE 1: RISK-ON (hold only, no new deployment)")
     elif score <= -0.5: phase = "PHASE 2: RISK-OFF (cash, wait)"
     else: phase = "TRANSITION (position for next leg)"
 
@@ -187,6 +251,7 @@ def main():
     # Results are a pure function of the committed dataset - re-run to regenerate.
     print(f"# Macro Regime v3 - {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}")
     print(f"## SCORE {score:+.1f} -> **{verdict}**")
+    print(f"**Coverage:** {len(signals)}/14 signals, weight {sum(weights.values()):.1f}/19.0")
     print(f"**Phase:** {phase}")
     print(f"**Action:** {action}")
     print("| Signal | Value | Weight |")

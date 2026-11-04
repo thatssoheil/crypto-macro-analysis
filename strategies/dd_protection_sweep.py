@@ -35,6 +35,11 @@ def simulate(btc_slice, exit_rule, reentry_rule, label):
     ma50 = btc_slice.rolling(50).mean()
     ath = 0.0
     in_mkt = True
+    # Fixed 2026-11-04: the exposure that earns day i's return is the state held at the
+    # PRIOR close. The old loop flipped the state on today's close and then earned today's
+    # return, i.e. it exited on the same down day it avoided. That is same-day lookahead:
+    # the 50d-OR-DD-20% layer read -19.8% instead of -44% to -53%.
+    prev_in_mkt = True
     exits = 0
     dd_at_exit = []
     eq = np.empty(len(btc_slice))
@@ -52,7 +57,8 @@ def simulate(btc_slice, exit_rule, reentry_rule, label):
             if reentry_rule(0.0, px, ma200.iloc[i], ma100.iloc[i], ma50.iloc[i]):
                 in_mkt = True
         ret = btc_slice.iloc[i] / btc_slice.iloc[i-1] - 1
-        eq[i] = eq[i-1] * (1 + ret if in_mkt else 1.0)
+        eq[i] = eq[i-1] * (1 + ret if prev_in_mkt else 1.0)
+        prev_in_mkt = in_mkt
     eq = pd.Series(eq, index=btc_slice.index)
     dd = (eq / eq.cummax() - 1).min() * 100
     return {

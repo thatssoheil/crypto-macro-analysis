@@ -22,7 +22,7 @@ import numpy as np
 ROOT = Path(__file__).parent.parent
 DATA = ROOT / "data" / "macro_dataset"
 
-W, END = "2017-08-16", "2026-08-08"
+W, END = "2017-08-16", "2026-11-01"
 
 
 def load(name, date_col="date", col="close"):
@@ -48,6 +48,14 @@ def bands(s, lo, hi, lo_v, hi_v):
     return out
 
 
+def gbands(s, neg, pos):
+    """HIGH-IS-GOOD growth series: +1 above pos, -1 below neg (fixed 2026-11-04)."""
+    out = pd.Series(0.0, index=s.index)
+    out[s > pos] = 1.0
+    out[s < neg] = -1.0
+    return out
+
+
 def main():
     eth = load("ethusd_daily_bitstamp", "ts").loc[W:END]
     idx = eth.index
@@ -63,19 +71,22 @@ def main():
     stab = load("stablecoin_total_liquidity", col="total_cap_usd")
     if stab is not None:
         g = stab / stab.shift(30) - 1
-        sig["stablecoin"] = (bands(g, None, None, 0.02, -0.02), 2.0)
+        # Fixed 2026-11-04: growth series are HIGH-is-good; bands() is low-is-good.
+        sig["stablecoin"] = (gbands(g, -0.02, 0.02), 2.0)
 
-    sig["dxy"] = (slope(load("dxy")), 1.5)
+    sig["dxy"] = (-slope(load("dxy")), 1.5)  # firm dollar is risk-off (fixed 2026-11-04)
 
     m2 = load("fred_us_m2", col="value")
     if m2 is not None:
         yoy = m2 / m2.shift(12) - 1
-        sig["m2"] = (bands(yoy, None, None, 0.04, 0.01), 2.0)
+        sig["m2"] = (gbands(yoy, 0.01, 0.04), 2.0)
 
     fbs = load("fred_fed_balance_sheet", col="value")
     if fbs is not None:
-        chg = fbs / fbs.shift(60) - 1
-        sig["fed_bs"] = (bands(chg, None, None, 0.01, -0.01), 1.5)
+        # 60 CALENDAR days, matching the live engine (was shift(60) rows = 420 days).
+        fbs_d = fbs.resample("D").ffill()
+        chg = (fbs_d / fbs_d.shift(60) - 1).reindex(fbs.index)
+        sig["fed_bs"] = (gbands(chg, -0.01, 0.01), 1.5)
 
     # B. RISK APPETITE (1.5)
     sig["vix"] = (bands(load("vix"), None, None, 20.0, 30.0), 1.5)

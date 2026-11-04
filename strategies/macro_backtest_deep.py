@@ -23,17 +23,21 @@ def backtest(start, end, start_cash=10000):
     px = px[(px.index >= start) & (px.index <= end)]
     if len(px) < 250: return None
     ma200 = px.rolling(200).mean()
-    # Trend-follow: in market when price >= 200MA, cash when below
-    in_market = pd.Series(True, index=px.index)
+    # Trend-follow: in market when price >= 200MA, cash when below.
+    # Fixed 2026-11-04: the position is decided on the PRIOR close. The old version used
+    # today's close to decide today's position and then earned today's return, which is
+    # same-day lookahead and inflated the result by roughly 32x over 2017-2026.
+    sig = pd.Series(1.0, index=px.index)
     valid = ma200.notna()
-    in_market[valid] = px[valid] >= ma200[valid]
+    sig[valid] = (px[valid] >= ma200[valid]).astype(float)
+    in_market = sig.shift(1).fillna(1.0)
     rets = px.pct_change().fillna(0)
     eq_tf = (1 + rets * in_market).cumprod() * start_cash
     eq_bh = (1 + rets).cumprod() * start_cash
     dd_tf = (eq_tf / eq_tf.cummax() - 1).min() * 100
     dd_bh = (eq_bh / eq_bh.cummax() - 1).min() * 100
     # Cash periods
-    cash_days = int((~in_market).sum())
+    cash_days = int((in_market == 0).sum())
     return {
         "start": str(px.index[0].date()), "end": str(px.index[-1].date()),
         "days": len(px), "cash_days": cash_days,
