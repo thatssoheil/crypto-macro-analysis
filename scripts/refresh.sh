@@ -71,6 +71,11 @@ echo "=== [3/4] audit ==="
 # Fixed 2026-11-04: `| tail -2` hid the list of charts needing review.
 "$PY" "$REPO_DIR/strategies/audit_dataset.py"
 
+echo "=== [3b/4] signal parity (engine output vs independent recomputation) ==="
+# Added 2026-11-04: the audit never compared the signal vector the engine emits. This does,
+# and fails closed if the deployed rules and the documented rules diverge.
+"$PY" "$REPO_DIR/strategies/signal_parity.py" || { echo "PARITY FAILED - engine and checker disagree" >&2; exit 1; }
+
 echo "=== [4/4] on-chain confidence (live vs point-in-time) ==="
 # The live gn_* series is a best current estimate that gets restated; the _pit twin is
 # what was knowable at the time. A flow read is only stated as a direction when the two

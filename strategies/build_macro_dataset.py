@@ -45,7 +45,7 @@ def save_csv(name, rows, header, source):
     path = OUT / f"{name}.csv"
     with open(path, "w", newline="") as f:
         w = csv.writer(f); w.writerow(header); w.writerows(rows)
-    span = f"{rows[0][0]} -> {rows[-1][0]}" if rows else ""
+    span = f"{min(r[0] for r in rows)} -> {max(r[0] for r in rows)}" if rows else ""
     manifest["charts"][name] = {"file": path.name, "rows": len(rows), "source": source, "span": span}
     print(f"  saved {name}.csv ({len(rows)} rows, {span})")
 
@@ -74,7 +74,7 @@ def merge_csv(name, rows, header, source):
     out = sorted(merged.values(), key=lambda r: r[0])
     with open(path, "w", newline="") as f:
         w = csv.writer(f); w.writerow(header); w.writerows(out)
-    span = f"{out[0][0]} -> {out[-1][0]}"
+    span = f"{min(r[0] for r in out)} -> {max(r[0] for r in out)}"
     manifest["charts"][name] = {"file": path.name, "rows": len(out),
                                 "source": source + " (merged; 30d window per fetch)", "span": span}
     print(f"  merged {name}.csv ({len(out)} rows, +{len(out) - before} new, {span})")
@@ -331,10 +331,39 @@ for chart in ["hash-rate", "difficulty", "n-unique-addresses", "n-transactions",
 
 # ========== 3. FEAR & GREED (2018+) ==========
 print("== Fear & Greed ==")
-r = get("https://api.alternative.me/fng/?limit=3000&format=json")
-if r:
-    rows = [[datetime.fromtimestamp(int(d["timestamp"]), tz=timezone.utc).strftime("%Y-%m-%d"), d["value"], d["value_classification"]] for d in r.json()["data"]]
-    save_csv("fear_greed", rows, ["date", "value", "classification"], "alternative.me")
+r = get("https://api.alternative.me/fng/?limit=0&format=json")
+if not r:
+    r = get("https://api.alternative.me/fng/?limit=3000&format=json")
+try:
+    fng_payload = r.json()["data"] if r else []
+except Exception:
+    fng_payload = []
+if fng_payload:
+    # Fixed 2026-11-04: limit=3000 + overwrite made this file a rolling window that ate its
+    # own history (it started 2018-08-15 and had started 2018-08-01 three commits earlier).
+    # limit=0 asks for everything available, and the result is MERGED by date into the
+    # committed file, so the early 2018 bear can never be lost again.
+    fetched = [[datetime.fromtimestamp(int(d["timestamp"]), tz=timezone.utc).strftime("%Y-%m-%d"),
+                str(d["value"]), d["value_classification"]] for d in fng_payload]
+    path = OUT / "fear_greed.csv"
+    merged = {}
+    if path.exists():
+        with open(path, newline="") as f:
+            rd = csv.reader(f); next(rd, None)
+            for row in rd:
+                if row and row[0]:
+                    merged[row[0]] = row
+    before = len(merged)
+    for row in fetched:
+        merged[row[0]] = row
+    out = sorted(merged.values(), key=lambda x: x[0])
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f); w.writerow(["date", "value", "classification"]); w.writerows(out)
+    span = f"{out[0][0]} -> {out[-1][0]}"
+    manifest["charts"]["fear_greed"] = {"file": "fear_greed.csv", "rows": len(out),
+                                        "source": "alternative.me (merged; history preserved)",
+                                        "span": span}
+    print(f"  merged fear_greed.csv ({len(out)} rows, +{len(out) - before} new, {span})")
 else:
     FAILED.append("fear_greed")
 
