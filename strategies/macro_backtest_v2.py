@@ -80,7 +80,10 @@ def main():
             elif prices[i] > ma200[i]:
                 cur = True
         in_market.append(cur)
-    # note: daily re-eval, no lag on signal
+    # Fixed 2026-11-04: the position applied to day i's return must be the one decided on
+    # day i-1's close. The old loop applied in_market[i], i.e. today's own signal, to
+    # today's return - same-day lookahead (the old comment said "no lag on signal").
+    in_market = [True] + in_market[:-1]
 
     # compute both equity curves (start $10k, 2017)
     eq_tf = [10000.0]; eq_bh = [10000.0]

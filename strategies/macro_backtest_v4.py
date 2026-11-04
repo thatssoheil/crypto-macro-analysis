@@ -24,7 +24,7 @@ import numpy as np
 ROOT = Path(__file__).parent.parent
 DATA = ROOT / "data" / "macro_dataset"
 
-W, END = "2017-01-01", "2026-08-03"
+W, END = "2017-01-01", "2026-11-01"
 
 
 def load(name, date_col="date", col="close"):
@@ -41,15 +41,31 @@ def slope(s, n=200):
 
 
 def bands(s, lo, hi, lo_v, hi_v):
-    """Threshold signal on a change series: +1 below lo_v, -1 above hi_v, else 0."""
+    """Threshold signal on a LOW-IS-GOOD change series: +1 below lo_v, -1 above hi_v."""
     out = pd.Series(0.0, index=s.index)
     out[s < lo_v] = 1.0
     out[s > hi_v] = -1.0
     return out
 
 
+def gbands(s, neg, pos):
+    """Threshold signal on a HIGH-IS-GOOD growth series: +1 above pos, -1 below neg.
+    Fixed 2026-11-04: the three growth series (stablecoins, M2, Fed balance sheet) were
+    encoded through bands() with reversed thresholds, so every expanding reading scored
+    -1. That inverted 5.5 of 19 weight - 29% of the model - in every composite replay.
+    """
+    out = pd.Series(0.0, index=s.index)
+    out[s > pos] = 1.0
+    out[s < neg] = -1.0
+    return out
+
+
 def main():
-    btc = load("btcusd_daily_bitstamp", "ts").loc[W:END]
+    # Fixed 2026-11-04: warm the 200-day average on FULL history, then slice. Slicing first
+    # left the first 200 days of 2017 with a NaN average, i.e. in cash through the 2017 run,
+    # which silently depressed the baseline it is supposed to be compared against.
+    btc_full = load("btcusd_daily_bitstamp", "ts")
+    btc = btc_full.loc[W:END]
     idx = btc.index
 
     sig = {}
@@ -61,17 +77,21 @@ def main():
 
     stab = load("stablecoin_total_liquidity", col="total_cap_usd")
     g = stab / stab.shift(30) - 1
-    sig["stablecoin"] = (bands(g, None, None, 0.02, -0.02), 2.0)
+    sig["stablecoin"] = (gbands(g, -0.02, 0.02), 2.0)
 
-    sig["dxy"] = (slope(load("dxy")), 1.5)
+    # DXY: firm dollar is risk-off (fixed 2026-11-04, was positive for a firm dollar).
+    sig["dxy"] = (-slope(load("dxy")), 1.5)
 
     m2 = load("fred_us_m2", col="value")
     yoy = m2 / m2.shift(12) - 1
-    sig["m2"] = (bands(yoy, None, None, 0.04, 0.01), 2.0)
+    sig["m2"] = (gbands(yoy, 0.01, 0.04), 2.0)
 
     fbs = load("fred_fed_balance_sheet", col="value")
-    chg = fbs / fbs.shift(60) - 1  # 60 rows on weekly file = 60 weeks (engine iloc[-61])
-    sig["fed_bs"] = (bands(chg, None, None, 0.01, -0.01), 1.5)
+    # 60 CALENDAR days, matching the live engine (WALCL is weekly, so shift(60) rows = 60
+    # weeks = 420 days). Fixed 2026-11-04.
+    fbs_d = fbs.resample("D").ffill()
+    chg = (fbs_d / fbs_d.shift(60) - 1).reindex(fbs.index)
+    sig["fed_bs"] = (gbands(chg, -0.01, 0.01), 1.5)
 
     # B. RISK APPETITE
     vix = load("vix")
@@ -83,7 +103,7 @@ def main():
     sig["credit"] = (bands(hy, None, None, 3.5, 5.5), 1.5)
 
     # C. CRYPTO INTERNAL
-    sig["btc_ma"] = (slope(btc), 2.0)
+    sig["btc_ma"] = (slope(btc_full), 2.0)
 
     fng = load("fear_greed", col="value")
     sig["fng"] = (bands(fng, None, None, 30.0, 70.0), 1.0)
@@ -113,9 +133,10 @@ def main():
     wsum = (sig_df.notna() * pd.Series(WTS)).sum(axis=1)
     score = (sig_df.fillna(0) * pd.Series(WTS)).sum(axis=1) / wsum * 3
 
-    # Baseline: 200d-MA filter only (same no-lookahead convention)
-    ma200 = btc.rolling(200).mean()
-    ma_sig = (btc >= ma200).astype(float)
+    # Baseline: 200d-MA filter only (same no-lookahead convention, warmed on full history
+    # then sliced to the window).
+    ma200 = btc_full.rolling(200).mean()
+    ma_sig = (btc_full >= ma200).astype(float).loc[W:END]
 
     def simulate(in_market, name, hyst=None):
         """hyst: dict(entry=float, exit=float, days=int) - switch only after N consecutive days

@@ -101,6 +101,36 @@ for name in charts:
 print(f"\n  Charts needing review: {problems if problems else 'NONE'}")
 print(f"  Total charts: {len(charts)}")
 
+# --- TRAILING AGE (added 2026-11-04) -------------------------------------------------
+# The gap checks above measure gaps BETWEEN rows, so a series that simply STOPS has no
+# trailing gap and reads as healthy forever. This block makes the age of the last
+# observation explicit, which is the only thing that catches a dead feed.
+FRESH = {"monthly": 75, "weekly": 14, "daily": 10}
+MONTHLY_SET = {"fred_cpi", "fred_pce", "fred_unemployment", "fred_us_m2", "fred_nonfarm_payrolls"}
+WEEKLY_SET = {"fred_fed_balance_sheet", "fred_tga", "fred_rrp", "fred_jobless_claims"}
+now = pd.Timestamp.now(tz="UTC")
+stale, frozen = [], []
+for name in charts:
+    df = load(name)
+    if df is None or len(df) == 0:
+        continue
+    limit = (FRESH["monthly"] if name in MONTHLY_SET
+             else FRESH["weekly"] if name in WEEKLY_SET else FRESH["daily"])
+    age = (now - df.index[-1]).days
+    if age > limit:
+        # The on-chain family is INTENTIONALLY frozen: keyless Glassnode access ended
+        # 2026-10-01 and the paid route was declined. Report it, never fail on it.
+        (frozen if name.startswith("gn_") else stale).append((name, age, limit))
+print(f"\n  Stale inputs (older than their cadence allows): {len(stale)}")
+for name, age, limit in sorted(stale, key=lambda r: -r[1]):
+    print(f"    STALE {name:40s} last={age:>4}d ago (limit {limit}d)")
+print(f"  Frozen by owner decision (expected): {len(frozen)}")
+if frozen:
+    print(f"    FROZEN on-chain family, oldest row {max(f[1] for f in frozen)}d old"
+          f" - historical only, never quote as a live read")
+if stale:
+    problems.extend(n for n, _, _ in stale)
+
 print()
 print("=" * 70)
 print("PART 2: SIGNAL CORRECTNESS (v4 engine vs raw data)")
@@ -128,7 +158,11 @@ def chk(name, cond, detail):
 # A. Liquidity
 if us10y is not None and us3m is not None:
     spread = us10y["close"].iloc[-1] - us3m["close"].iloc[-1]
-    chk("curve", spread > 0, f"10y-3m = {us10y['close'].iloc[-1]:.2f} - {us3m['close'].iloc[-1]:.2f} = {spread:.2f}%")
+    # Fixed 2026-11-04: this asserted spread > 0, so a legitimate curve inversion FAILED
+    # and a 100x unit error PASSED. Validate magnitude, and report the shape separately.
+    chk("curve", -5 < spread < 10,
+        f"10y-3m = {us10y['close'].iloc[-1]:.2f} - {us3m['close'].iloc[-1]:.2f} = {spread:.2f}%"
+        f" ({'inverted' if spread < 0 else 'positive'})")
 if stab is not None and len(stab) > 30:
     g = stab["total_cap_usd"].iloc[-1] / stab["total_cap_usd"].iloc[-30] - 1
     chk("stablecoin", abs(g) < 0.10, f"30d chg = {g*100:+.1f}%")
@@ -146,7 +180,9 @@ if vix is not None:
 if spx is not None:
     ma = spx["close"].rolling(200).mean().iloc[-1]
     above = spx["close"].iloc[-1] > ma
-    chk("spx", True, f"SPX {spx['close'].iloc[-1]:,.0f} {'>' if above else '<'} 200MA {ma:,.0f}")
+    # Fixed 2026-11-04: was an unconditional True, i.e. not a check at all.
+    chk("spx", 300 < spx["close"].iloc[-1] < 30_000,
+        f"SPX {spx['close'].iloc[-1]:,.0f} {'>' if above else '<'} 200MA {ma:,.0f}")
 if hy is not None:
     hyv = hy["value"].iloc[-1]
     chk("credit", 0.5 < hyv < 15, f"HY spread = {hyv:.2f}%")
@@ -155,7 +191,9 @@ if hy is not None:
 if btc is not None:
     ma = btc["close"].rolling(200).mean().iloc[-1]
     above = btc["close"].iloc[-1] > ma
-    chk("btc_ma", True, f"BTC {btc['close'].iloc[-1]:,.0f} {'>' if above else '<'} 200MA {ma:,.0f}")
+    # Fixed 2026-11-04: was an unconditional True, i.e. not a check at all.
+    chk("btc_ma", 1_000 < btc["close"].iloc[-1] < 2_000_000,
+        f"BTC {btc['close'].iloc[-1]:,.0f} {'>' if above else '<'} 200MA {ma:,.0f}")
 if fng is not None:
     f = int(fng["value"].iloc[-1])
     chk("fng", 0 <= f <= 100, f"F&G = {f}")
@@ -163,7 +201,9 @@ if hash_df is not None:
     hd = hash_df.rename(columns={"value": "close"})
     ma = hd["close"].rolling(60).mean().iloc[-1]
     above = hd["close"].iloc[-1] > ma
-    chk("hash", True, f"hash {hd['close'].iloc[-1]:,.0f} {'>' if above else '<'} 60MA {ma:,.0f}")
+    # Fixed 2026-11-04: was an unconditional True, i.e. not a check at all.
+    chk("hash", 1e5 < hd["close"].iloc[-1] < 1e12,
+        f"hash {hd['close'].iloc[-1]:,.0f} {'>' if above else '<'} 60MA {ma:,.0f}")
 
 # D. Inflation
 if real_y is not None:
@@ -253,8 +293,32 @@ for _n, _band, _fmt in _EXTRA:
     _v = float(_d["value"].iloc[-1])
     chk(_n, _band(_v), "last = " + _fmt.format(_v))
 
+# Charts the engine actually consumes. A stale one of these can invert a verdict, so it
+# fails the audit. A stale chart outside this set is reported and warns, but does not
+# block: the frozen on-chain layer already proves a non-engine feed can die quietly.
+ENGINE_INPUTS = {
+    "us10y", "us3m", "dxy", "vix", "sp500", "gold", "stablecoin_total_liquidity",
+    "fred_us_m2", "fred_fed_balance_sheet", "fred_hy_spread", "btcusd_daily_bitstamp",
+    "fear_greed", "bi_hash-rate", "fred_real_yield10y", "fred_cpi",
+}
+stale_core = [s for s in stale if s[0] in ENGINE_INPUTS]
+stale_other = [s for s in stale if s[0] not in ENGINE_INPUTS]
+
 print()
 fails = [c for c in checks if not c[1]]
 print(f"  SIGNAL CHECKS: {len(checks)-len(fails)}/{len(checks)} pass, {len(fails)} fail")
 for name, cond, detail in fails:
     print(f"    FAIL {name}: {detail}")
+print(f"  STALE ENGINE INPUTS: {len(stale_core)}")
+for name, age, limit in sorted(stale_core, key=lambda r: -r[1]):
+    print(f"    STALE {name}: {age}d (limit {limit}d)  <- blocks the verdict")
+print(f"  STALE NON-ENGINE CHARTS (warn only): {len(stale_other)}")
+for name, age, limit in sorted(stale_other, key=lambda r: -r[1]):
+    print(f"    WARN  {name}: {age}d (limit {limit}d)")
+
+# Fixed 2026-11-04: the audit used to exit 0 no matter what it found, so it could report
+# failures and still certify the run.
+if fails or stale_core:
+    print("  AUDIT RESULT: FAIL (structural)")
+    raise SystemExit(1)
+print("  AUDIT RESULT: PASS")
