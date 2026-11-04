@@ -32,6 +32,14 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
    pre-declared - treat it as a hypothesis requiring an out-of-sample A/B, not a finding.
    Use the score as CONTEXT, never as an order. Do NOT re-weight signals without an A/B.
    Reproduce: `strategies/macro_backtest_v4.py`.
+3b. **The moving-average LENGTH is not stable across cycles - do not tune it.** The
+   2017-2026 sweep prefers 50-150 days over 200, which looks like an improvement. A
+   pre-declared holdout on 2011-2016 (a window the sweep never saw) FAILS that choice:
+   MA100 $455,665 versus $886,514 buy-and-hold, 1 of 4 criteria met, while MA200 at
+   $914,530 was the only length that did not lose money there. Conclusion: keep 200 days
+   as the drawdown reducer and expect no return from it; any length chosen on one window
+   is a curve fit until it survives a holdout. Reproduce:
+   `strategies/ma_length_holdout.py` (criteria frozen in its docstring before the run).
 4. **Every claim needs A/B evidence.** The owner demands a backtest with vs
    without any proposed change before accepting it.
 5. **Secrets live in `.env` (gitignored).** Never commit `.env` or any real key.
