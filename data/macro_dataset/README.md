@@ -1,52 +1,52 @@
 # Macro + Crypto Master Dataset
 
-Built: 2026-11-08T02:15:54.450705+00:00
+Built: 2026-11-15T02:15:16.175404+00:00
 
 | Chart | Rows | Span | Source |
 |---|---|---|---|
-| btcusd_daily_bitstamp | 5562 | 2011-08-18 00:00:00 -> 2026-11-08 00:00:00 | Bitstamp v2 ohlc |
-| btcusd_hourly_bitstamp | 133455 | 2011-08-18 12:00:00 -> 2026-11-08 02:00:00 | Bitstamp v2 ohlc |
-| ethusd_daily_bitstamp | 3372 | 2017-08-16 00:00:00 -> 2026-11-08 00:00:00 | Bitstamp v2 ohlc |
-| bi_hash-rate | 6515 | 2009-01-03 00:00:00 -> 2026-11-07 00:00:00 | blockchain.info API |
-| bi_difficulty | 6515 | 2009-01-03 00:00:00 -> 2026-11-07 00:00:00 | blockchain.info API |
-| bi_n-unique-addresses | 6487 | 2009-01-03 00:00:00 -> 2026-11-07 00:00:00 | blockchain.info API |
-| bi_n-transactions | 6501 | 2009-01-17 00:00:00 -> 2026-11-07 00:00:00 | blockchain.info API |
-| bi_market-cap | 937164 | 2009-01-03 18:15:05 -> 2026-11-07 07:57:45 | blockchain.info API |
-| bi_total-bitcoins | 937160 | 2009-01-03 18:15:05 -> 2026-11-07 07:57:45 | blockchain.info API |
-| fear_greed | 3199 | 2018-02-01 -> 2026-11-08 | alternative.me (merged; history preserved) |
-| dxy | 3773 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| us10y | 3771 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| us30y | 3771 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| us3m | 3771 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| vix | 3774 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| sp500 | 3772 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| nasdaq | 3772 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| russell2000 | 3772 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| gold | 3772 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| silver | 3771 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| wti | 3772 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| copper | 3772 | 2011-11-07 -> 2026-11-06 | Yahoo Finance |
-| ecb_usd | 7131 | 1999-01-04 -> 2026-11-06 | ECB eurofxref-hist |
-| ecb_jpy | 7131 | 1999-01-04 -> 2026-11-06 | ECB eurofxref-hist |
-| ecb_cny | 5532 | 2005-04-01 -> 2026-11-06 | ECB eurofxref-hist |
+| btcusd_daily_bitstamp | 5569 | 2011-08-18 00:00:00 -> 2026-11-15 00:00:00 | Bitstamp v2 ohlc |
+| btcusd_hourly_bitstamp | 133623 | 2011-08-18 12:00:00 -> 2026-11-15 02:00:00 | Bitstamp v2 ohlc |
+| ethusd_daily_bitstamp | 3379 | 2017-08-16 00:00:00 -> 2026-11-15 00:00:00 | Bitstamp v2 ohlc |
+| bi_hash-rate | 6522 | 2009-01-03 00:00:00 -> 2026-11-14 00:00:00 | blockchain.info API |
+| bi_difficulty | 6522 | 2009-01-03 00:00:00 -> 2026-11-14 00:00:00 | blockchain.info API |
+| bi_n-unique-addresses | 6494 | 2009-01-03 00:00:00 -> 2026-11-14 00:00:00 | blockchain.info API |
+| bi_n-transactions | 6508 | 2009-01-17 00:00:00 -> 2026-11-14 00:00:00 | blockchain.info API |
+| bi_market-cap | 937820 | 2009-01-03 18:15:05 -> 2026-11-14 08:12:21 | blockchain.info API |
+| bi_total-bitcoins | 937816 | 2009-01-03 18:15:05 -> 2026-11-14 08:12:21 | blockchain.info API |
+| fear_greed | 3206 | 2018-02-01 -> 2026-11-15 | alternative.me (merged; history preserved) |
+| dxy | 3773 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| us10y | 3771 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| us30y | 3771 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| us3m | 3771 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| vix | 3774 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| sp500 | 3772 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| nasdaq | 3772 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| russell2000 | 3772 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| gold | 3772 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| silver | 3771 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| wti | 3772 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| copper | 3772 | 2011-11-14 -> 2026-11-13 | Yahoo Finance |
+| ecb_usd | 7136 | 1999-01-04 -> 2026-11-13 | ECB eurofxref-hist |
+| ecb_jpy | 7136 | 1999-01-04 -> 2026-11-13 | ECB eurofxref-hist |
+| ecb_cny | 5537 | 2005-04-01 -> 2026-11-13 | ECB eurofxref-hist |
 | fred_us_m2 | 813 | 1959-01-01 -> 2026-09-01 | FRED M2SL |
-| fred_fed_balance_sheet | 1247 | 2002-12-18 -> 2026-11-04 | FRED WALCL |
-| fred_fed_funds_eff | 26426 | 1954-07-01 -> 2026-11-05 | FRED DFF |
-| fred_us2y | 12605 | 1976-06-01 -> 2026-11-05 | FRED DGS2 |
-| fred_us10y_fred | 16197 | 1962-01-02 -> 2026-11-05 | FRED DGS10 |
-| fred_us30y_fred | 12427 | 1977-02-15 -> 2026-11-05 | FRED DGS30 |
-| fred_breakeven10y | 5967 | 2003-01-02 -> 2026-11-06 | FRED T10YIE |
-| fred_real_yield10y | 5966 | 2003-01-02 -> 2026-11-05 | FRED DFII10 |
-| fred_cpi | 956 | 1947-01-01 -> 2026-09-01 | FRED CPIAUCSL |
+| fred_fed_balance_sheet | 1248 | 2002-12-18 -> 2026-11-11 | FRED WALCL |
+| fred_fed_funds_eff | 26433 | 1954-07-01 -> 2026-11-12 | FRED DFF |
+| fred_us2y | 12609 | 1976-06-01 -> 2026-11-12 | FRED DGS2 |
+| fred_us10y_fred | 16201 | 1962-01-02 -> 2026-11-12 | FRED DGS10 |
+| fred_us30y_fred | 12431 | 1977-02-15 -> 2026-11-12 | FRED DGS30 |
+| fred_breakeven10y | 5971 | 2003-01-02 -> 2026-11-13 | FRED T10YIE |
+| fred_real_yield10y | 5970 | 2003-01-02 -> 2026-11-12 | FRED DFII10 |
+| fred_cpi | 957 | 1947-01-01 -> 2026-10-01 | FRED CPIAUCSL |
 | fred_pce | 813 | 1959-01-01 -> 2026-09-01 | FRED PCEPI |
 | fred_unemployment | 945 | 1948-01-01 -> 2026-10-01 | FRED UNRATE |
-| fred_jobless_claims | 3122 | 1967-01-07 -> 2026-10-31 | FRED ICSA |
+| fred_jobless_claims | 3123 | 1967-01-07 -> 2026-11-07 | FRED ICSA |
 | fred_nonfarm_payrolls | 1054 | 1939-01-01 -> 2026-10-01 | FRED PAYEMS |
-| fred_hy_spread | 786 | 2023-11-07 -> 2026-11-05 | FRED BAMLH0A0HYM2 |
-| fred_ig_spread | 785 | 2023-11-07 -> 2026-11-05 | FRED BAMLC0A0CM |
-| eth_tvl_defillama | 3330 | 2017-09-27 -> 2026-11-08 | DefiLlama historicalChainTvl/Ethereum |
-| ethbtc_daily_bitstamp | 3372 | 2017-08-16 00:00:00 -> 2026-11-08 00:00:00 | Bitstamp v2 ohlc |
-| stablecoin_total_liquidity | 3267 | 2017-11-29 -> 2026-11-08 | DefiLlama stablecoincharts/all |
+| fred_hy_spread | 785 | 2023-11-14 -> 2026-11-12 | FRED BAMLH0A0HYM2 |
+| fred_ig_spread | 784 | 2023-11-14 -> 2026-11-12 | FRED BAMLC0A0CM |
+| eth_tvl_defillama | 3337 | 2017-09-27 -> 2026-11-15 | DefiLlama historicalChainTvl/Ethereum |
+| ethbtc_daily_bitstamp | 3379 | 2017-08-16 00:00:00 -> 2026-11-15 00:00:00 | Bitstamp v2 ohlc |
+| stablecoin_total_liquidity | 3274 | 2017-11-29 -> 2026-11-15 | DefiLlama stablecoincharts/all |
 | gn_exchange_netflow_btc | 48 | 2026-08-13 -> 2026-09-29 | Glassnode MCP /v1/metrics/transactions/transfers_volume_exchanges_net [BTC] (merged; 30d window per fetch) |
 | gn_exchange_balance_btc | 48 | 2026-08-13 -> 2026-09-29 | Glassnode MCP /v1/metrics/distribution/balance_exchanges [BTC] (merged; 30d window per fetch) |
 | gn_sopr | 48 | 2026-08-13 -> 2026-09-29 | Glassnode MCP /v1/metrics/indicators/sopr [BTC] (merged; 30d window per fetch) |
@@ -89,17 +89,17 @@ Built: 2026-11-08T02:15:54.450705+00:00
 | gn_etf_flows_net_btc_pit | 37 | 2026-08-24 -> 2026-09-29 | Glassnode MCP /v1/metrics/institutions/us_spot_etf_flows_net_pit [BTC] (merged; 30d window per fetch) |
 | gn_etf_flows_net_eth | 37 | 2026-08-24 -> 2026-09-29 | Glassnode MCP /v1/metrics/institutions/us_spot_etf_flows_net [ETH] (merged; 30d window per fetch) |
 | gn_etf_flows_net_eth_pit | 37 | 2026-08-24 -> 2026-09-29 | Glassnode MCP /v1/metrics/institutions/us_spot_etf_flows_net_pit [ETH] (merged; 30d window per fetch) |
-| fred_rrp | 3363 | 2003-02-07 -> 2026-11-06 | FRED RRPONTSYD |
-| fred_tga | 1247 | 2002-12-18 -> 2026-11-04 | FRED WTREGEN |
-| tga_daily | 5299 | 2005-10-03 -> 2026-11-05 | Treasury FiscalData DTS operating cash balance (TGA, USD millions) |
-| dvol_btc | 2056 | 2021-03-24 -> 2026-11-08 | Deribit DVOL (daily close) (merged; 30d window per fetch) |
-| dvol_eth | 2056 | 2021-03-24 -> 2026-11-08 | Deribit DVOL (daily close) (merged; 30d window per fetch) |
-| bn_oi_btc | 2258 | 2020-09-01 -> 2026-11-06 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
-| bn_lsr_btc | 1938 | 2020-09-01 -> 2026-11-06 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
-| bn_taker_btc | 2128 | 2020-09-01 -> 2026-11-06 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
-| bn_oi_eth | 1802 | 2021-12-01 -> 2026-11-06 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
-| bn_lsr_eth | 1482 | 2021-12-01 -> 2026-11-06 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
-| bn_taker_eth | 1672 | 2021-12-01 -> 2026-11-06 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
+| fred_rrp | 3367 | 2003-02-07 -> 2026-11-13 | FRED RRPONTSYD |
+| fred_tga | 1248 | 2002-12-18 -> 2026-11-11 | FRED WTREGEN |
+| tga_daily | 5303 | 2005-10-03 -> 2026-11-12 | Treasury FiscalData DTS operating cash balance (TGA, USD millions) |
+| dvol_btc | 2063 | 2021-03-24 -> 2026-11-15 | Deribit DVOL (daily close) (merged; 30d window per fetch) |
+| dvol_eth | 2063 | 2021-03-24 -> 2026-11-15 | Deribit DVOL (daily close) (merged; 30d window per fetch) |
+| bn_oi_btc | 2265 | 2020-09-01 -> 2026-11-13 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
+| bn_lsr_btc | 1945 | 2020-09-01 -> 2026-11-13 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
+| bn_taker_btc | 2135 | 2020-09-01 -> 2026-11-13 | Binance USD-M daily metrics (BTCUSDT) (merged; 30d window per fetch) |
+| bn_oi_eth | 1809 | 2021-12-01 -> 2026-11-13 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
+| bn_lsr_eth | 1489 | 2021-12-01 -> 2026-11-13 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
+| bn_taker_eth | 1679 | 2021-12-01 -> 2026-11-13 | Binance USD-M daily metrics (ETHUSDT) (merged; 30d window per fetch) |
 | bn_funding_btc | 2496 | 2020-01-01 -> 2026-10-31 | Binance monthly fundingRate (BTCUSDT, daily sums) (merged; 30d window per fetch) |
 | bn_funding_eth | 2496 | 2020-01-01 -> 2026-10-31 | Binance monthly fundingRate (ETHUSDT, daily sums) (merged; 30d window per fetch) |
 | gn_binance_inflow_btc | 33 | 2026-08-28 -> 2026-09-29 | Glassnode MCP /v1/metrics/transactions/transfers_volume_to_exchanges_sum [BTC] (merged; 30d window per fetch) |
