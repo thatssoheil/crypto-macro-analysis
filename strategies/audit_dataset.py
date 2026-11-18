@@ -58,7 +58,7 @@ for name in charts:
         # judge only the dense era - zero gaps there since.
         gaps = gaps[gaps.index >= pd.Timestamp("2014-01-01", tz="UTC")]
     if name in ("bn_lsr_btc", "bn_lsr_eth", "bn_taker_btc", "bn_taker_eth",
-                "bn_lsr_sol", "bn_taker_sol"):
+                "bn_lsr_sol", "bn_taker_sol", "bn_lsr_zec", "bn_taker_zec"):
         # Binance's archive has empty top-trader/taker fields for much of 2022
         # (source-side, documented in SOURCES.md); judge the clean era only.
         gaps = gaps[gaps.index >= pd.Timestamp("2023-01-01", tz="UTC")]
@@ -95,7 +95,9 @@ for name in charts:
                       # 2026-09-24 derivatives: funding is signed
                       "bn_funding_btc", "bn_funding_eth",
                       # 2026-11-18 Solana onboarding
-                      "bn_funding_sol")
+                      "bn_funding_sol",
+                      # 2026-11-18 Zcash onboarding
+                      "bn_funding_zec")
     vals = df.select_dtypes(include=[np.number])
     negs = int((vals < 0).sum().sum()) if not vals.empty else 0
     neg_flag = negs and not neg_ok
@@ -113,6 +115,17 @@ print(f"  Total charts: {len(charts)}")
 # agree and that an obviously wrong scale (a decimal slip, a stale file) cannot pass.
 _sol = load("solusd_daily_yahoo")
 _solx = load("solusd_daily_okx")
+_zec = load("zecusd_daily_bitfinex")
+_zecx = load("zecusd_daily_okx")
+if _zec is not None and _zecx is not None:
+    _b = abs(float(_zec["close"].iloc[-1]) / float(_zecx["close"].iloc[-1]) - 1) * 100
+    print(f"  [{'PASS' if _b < 3 else 'FAIL'}] zec_venues: Bitfinex vs OKX last close basis {_b:.2f}% (limit 3%)")
+    if _b >= 3:
+        problems.append("zecusd_cross_venue")
+if _zec is not None:
+    _lo = float(_zec["low"].min())
+    print(f"  [{'PASS' if _lo > 0 else 'FAIL'}] zec_scale: lowest print ${_lo:,.2f} (must be > 0)")
+
 if _sol is not None and _solx is not None:
     basis = abs(float(_sol["close"].iloc[-1]) / float(_solx["close"].iloc[-1]) - 1) * 100
     print(f"  [{'PASS' if basis < 3 else 'FAIL'}] sol_venues: Yahoo vs OKX last close basis {basis:.2f}% (limit 3%)")
@@ -140,7 +153,7 @@ if _sol is not None and _solx is not None:
 # limit is meant to catch a DEAD feed, not the release calendar. Same reasoning for the
 # funding family: Binance ships monthly zips, so a 6-week-old row is normal, not stale.
 FRESH = {"monthly": 90, "weekly": 14, "daily": 10, "funding": 45}
-FUNDING_SET = {"bn_funding_btc", "bn_funding_eth", "bn_funding_sol"}
+FUNDING_SET = {"bn_funding_btc", "bn_funding_eth", "bn_funding_sol", "bn_funding_zec"}
 MONTHLY_SET = {"fred_cpi", "fred_pce", "fred_unemployment", "fred_us_m2", "fred_nonfarm_payrolls"}
 WEEKLY_SET = {"fred_fed_balance_sheet", "fred_tga", "fred_rrp", "fred_jobless_claims"}
 now = pd.Timestamp.now(tz="UTC")

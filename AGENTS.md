@@ -77,6 +77,8 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
 | `strategies/sol_macro_regime.py` | SOL live regime engine (macro backbone + SOL 200d MA + SOL/BTC + Solana TVL, stablecoin supply, DEX activity). |
 | `strategies/sol_macro_report.py` | SOL tape as stdout: daily + weekly history, volume, ratios, chain economics, derivatives, macro backdrop, switch levels. |
 | `strategies/sol_macro_backtest.py` | SOL backtest 2020-2026 (hold vs MA filters vs composite) plus the A/B for the two experimental SOL-native signals. |
+| `strategies/asset_tape.py` | THE tape for any onboarded asset (`--asset SOL|ZEC`): daily + weekly history, volume, ratios, dominance, chain or supply economics, derivatives, macro backdrop, switch levels. `sol_macro_report.py` is a shim onto it. ZEC has no regime engine yet - the tape is its data layer. |
+| `research/drawdown_state_study.py` | Forward returns conditioned on drawdown state (`--asset SOL|ZEC`); the honest way to answer "should I accumulate here". |
 | `strategies/btc_eth_rotation.py` | BTC<->ETH rotation engine (validated DUALM50 rule: ETH/BTC 50d MA + ETH 200d MA + VIX/SPX macro gate). Prints the live verdict, the A/B backtest with costs, and the blunt caveats. |
 | `strategies/build_macro_dataset.py` | Fetches all charts (keyless sources; FRED runs when `FRED_API_KEY` set). Slow network job - only re-run to refresh data. `--glassnode-only` is the fast path (on-chain append only, ~10s). |
 | `strategies/audit_dataset.py` | Data-integrity + signal-correctness audit. RUN BEFORE trusting any aggregation. Recomputes every v4 signal independently (all checks pass on every run). |
@@ -136,6 +138,8 @@ cd ~/projects/crypto-macro-analysis
 ./.venv/bin/python strategies/eth_macro_regime.py     # ETH engine -> verdict to stdout
 ./.venv/bin/python strategies/sol_macro_regime.py     # SOL engine -> verdict to stdout
 ./.venv/bin/python strategies/sol_macro_report.py     # SOL tape (daily + weekly + chain + derivatives)
+./.venv/bin/python strategies/asset_tape.py --asset ZEC   # ZEC tape
+./.venv/bin/python research/drawdown_state_study.py --asset ZEC  # state-conditional forward returns
 ./.venv/bin/python strategies/sol_macro_backtest.py   # SOL backtest + signal A/B
 ./.venv/bin/python strategies/audit_dataset.py         # signal checks (all pass)
 ./.venv/bin/python strategies/macro_backtest_v4.py     # composite backtest -> stdout
@@ -262,6 +266,15 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
   is the traded cross and `soleth_daily` is computed because OKX's SOL-ETH market is dead;
   (f) `bn_funding_sol` daily SUMS are huge in 2022-11-09..19 because Binance ran 2-hour
   funding at the -2 percent cap that week - 12 prints a day, not a parse error.
+- **ZCASH (onboarded 2026-11-18).** (a) ZEC's first sessions printed 3,591 close / 20,000 high on
+  slow-start supply - every ATH or drawdown read must start 2017-01-01 (`ath_from`), or the whole
+  history looks "deep"; (b) CMC's ZEC supply has a phantom 10M print in 2017-18 and revision steps,
+  so read the running maximum and only from 2022 on; (c) Bitfinex candles are MTS, OPEN, CLOSE,
+  HIGH, LOW, VOLUME - not OHLC - and volume is in ZEC, so multiply by close for USD notional;
+  (d) the shielded-pool balance has NO keyless source (zcashblockexplorer/zcha.in dead, blockchair
+  current-only with an overflowing circulation field), so any privacy-adoption claim must be
+  labelled unsourced; (e) ZEC has no DeFi, so there is no TVL/DEX/fee block - supply, issuance and
+  positioning are its fundamentals.
 - **`liquidity_map.py` follows `--coin` (fixed 2026-11-18).** The OKX instrument used to be
   hard-coded to `BTC-USDT-SWAP` while the open-interest lookup and the Gate calibration
   contract DID follow the coin, so `--coin SOL` modelled Bitcoin's shelves and labelled

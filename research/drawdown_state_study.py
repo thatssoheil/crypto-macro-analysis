@@ -1,39 +1,57 @@
 #!/usr/bin/env python3
 """
-SOL DEEP-DRAWDOWN STATE STUDY - what happened next, conditioned on where SOL sits.
+DEEP-DRAWDOWN STATE STUDY - what happened next, conditioned on where an asset sits.
 
-The question this answers (owner, 2026-11-18): "should I accumulate SOL in the coming
-months before the next leg?" An unconditional buy-and-hold multiple answers a different
-question, so this measures forward returns CONDITIONED on the state we are actually in:
-deep drawdown, below the 200-day, fear extreme.
+The question this answers: "should I accumulate asset X in the coming months?" An
+unconditional buy-and-hold multiple answers a different question, so this measures
+forward returns CONDITIONED on the state we are actually in: deep drawdown, above or
+below the 200-day, fear extreme.
 
 States tested (each reported with sample size, episode count and the baseline):
   A  deep bear      drawdown from running ATH <= -60% AND close < 200d MA
   B  deep only      drawdown <= -60% (either side of the 200d)
   C  deep + fear    A AND Fear and Greed <= 25
   D  deep + reclaim A is false, drawdown <= -60%, close > 200d MA  (the recovery leg)
-  E  no condition   every day in the same window (the baseline)
+  E  no condition   every day in the window (the baseline)
 
 Forward horizons: 30 / 90 / 180 / 365 calendar days.
 
 Honesty constraints that decide how to read this:
   - Daily observations OVERLAP. N is inflated; the number that matters is EPISODES
     (observations separated by more than 90 days). Both are printed.
-  - SOL has exactly ONE completed deep bear (2022). Any rate here is a sample of one
-    cycle plus the unresolved current one. It is a description, not a probability.
+  - One completed cycle supplies most observations for an alt. A rate here describes
+    two states, it is not a probability.
   - No costs, close-to-close, no survivorship correction.
 
 Also printed: the CONFIRMATION COST - how far price had already travelled when the
 200-day was reclaimed after each deep low. That is the price of waiting for the trend.
 
+Usage:
+    ./.venv/bin/python research/drawdown_state_study.py                 # SOL, from 2020-04-10
+    ./.venv/bin/python research/drawdown_state_study.py --asset ZEC     # ZEC, from 2017-01-01
+    ./.venv/bin/python research/drawdown_state_study.py --asset ZEC --start 2016-10-29
+
+ZEC starts 2017-01-01 by default because its first prints (2016-10-29, 3,591 USD on
+slow-start supply) are a launch artifact: measuring drawdown from that high makes every
+later state look "deep" when it is not.
+
 Stateless: prints to stdout, saves nothing.
 """
+import argparse
 from pathlib import Path
 import numpy as np
 import pandas as pd
 
 DATA = Path(__file__).parent.parent / "data" / "macro_dataset"
 HORIZONS = (30, 90, 180, 365)
+
+ASSETS = {
+    "SOL": {"chart": "solusd_daily_yahoo", "start": "2020-04-10",
+            "note": "SOL spot opened 2020-04-10; that is the whole listed history"},
+    "ZEC": {"chart": "zecusd_daily_bitfinex", "start": "2017-01-01",
+            "note": "the 2016-10 launch prints (3,591 USD) are an artifact, so the window "
+                    "starts 2017-01-01"},
+}
 
 
 def load(name, date_col="date", col="close"):
@@ -63,9 +81,10 @@ def episodes(mask, gap_days=90):
 def fwd(px, idx, h):
     """Forward simple return over h calendar days, from each observation date."""
     out = []
+    end = px.index[-1]
     for d in idx:
         target = d + pd.Timedelta(days=h)
-        if target > px.index[-1]:
+        if target > end:
             out.append(np.nan)
             continue
         p0 = float(px.asof(d))
@@ -79,8 +98,7 @@ def report(name, mask, px, baseline_mask=None):
     if len(idx) == 0:
         print(f"  {name:<26} no observations")
         return
-    n_ep = episodes(mask)
-    print(f"  {name:<26} obs {len(idx):>4}  episodes {n_ep:>2}  "
+    print(f"  {name:<26} obs {len(idx):>4}  episodes {episodes(mask):>2}  "
           f"first {idx[0]:%Y-%m-%d}  last {idx[-1]:%Y-%m-%d}")
     for h in HORIZONS:
         r = fwd(px, idx, h)
@@ -88,9 +106,8 @@ def report(name, mask, px, baseline_mask=None):
         if len(r) == 0:
             print(f"      {h:>3}d: no completed windows")
             continue
-        pos = (r > 0).mean() * 100
         line = (f"      {h:>3}d: median {np.median(r)*100:+7.1f}%   mean {np.mean(r)*100:+8.1f}%   "
-                f"positive {pos:5.1f}%   n={len(r)}")
+                f"positive {(r > 0).mean()*100:5.1f}%   n={len(r)}")
         if baseline_mask is not None:
             b = fwd(px, baseline_mask.index[baseline_mask], h)
             b = b[~np.isnan(b)]
@@ -99,16 +116,22 @@ def report(name, mask, px, baseline_mask=None):
         print(line)
 
 
-def main():
-    px = load("solusd_daily_yahoo", "ts").dropna()
-    px = px[~px.index.duplicated(keep="last")].sort_index()
+def main(argv=None):
+    ap = argparse.ArgumentParser(description="Forward returns conditioned on drawdown state.")
+    ap.add_argument("--asset", default="SOL", choices=sorted(ASSETS))
+    ap.add_argument("--start", default=None, help="override the asset's default start date")
+    args = ap.parse_args(argv)
+
+    cfg = ASSETS[args.asset]
+    start = args.start or cfg["start"]
+    px = load(cfg["chart"], "ts").dropna()
+    px = px[~px.index.duplicated(keep="last")].sort_index().loc[start:]
     fng = load("fear_greed", col="value")
 
     ath = px.cummax()
     dd = px / ath - 1
     ma200 = px.rolling(200).mean()
     above = px > ma200
-
     f = fng.reindex(px.index, method="ffill") if fng is not None else pd.Series(np.nan, index=px.index)
 
     states = {
@@ -120,13 +143,15 @@ def main():
     baseline = pd.Series(True, index=px.index)
 
     print("=" * 96)
-    print(f"SOL DEEP-DRAWDOWN STATE STUDY   {px.index[0]:%Y-%m-%d} -> {px.index[-1]:%Y-%m-%d}   "
+    print(f"{args.asset} DEEP-DRAWDOWN STATE STUDY   {px.index[0]:%Y-%m-%d} -> {px.index[-1]:%Y-%m-%d}   "
           f"({len(px)} daily closes)")
+    print(f"window note: {cfg['note']}")
     print("=" * 96)
     print(f"now: close ${px.iloc[-1]:,.2f}  drawdown from running ATH {dd.iloc[-1]*100:+.1f}%  "
           f"200d MA ${ma200.iloc[-1]:,.2f} ({(px.iloc[-1]/ma200.iloc[-1]-1)*100:+.1f}%)  "
           f"F&G {f.iloc[-1]:.0f}")
-    print(f"current state matches: " + ", ".join(k for k, m in states.items() if m.iloc[-1]))
+    hits = [k for k, m in states.items() if m.iloc[-1]]
+    print(f"current state matches: {', '.join(hits) if hits else 'none of the tested states'}")
 
     print("\nFORWARD RETURNS BY STATE (close to close, calendar horizons)")
     print(f"  {'baseline (all days)':<26} obs {len(px):>4}")
@@ -134,7 +159,7 @@ def main():
         r = fwd(px, px.index, h)
         r = r[~np.isnan(r)]
         print(f"      {h:>3}d: median {np.median(r)*100:+7.1f}%   mean {np.mean(r)*100:+8.1f}%   "
-              f"positive {(r>0).mean()*100:5.1f}%   n={len(r)}")
+              f"positive {(r > 0).mean()*100:5.1f}%   n={len(r)}")
     for name, mask in states.items():
         print()
         report(name, mask, px, baseline)
@@ -143,30 +168,27 @@ def main():
     print("\nCONFIRMATION COST - distance travelled before the 200-day was reclaimed")
     idx = px.index
     below = ~above
-    episodes_started = []
-    was_below = False
+    was_below, start_i, found = False, 0, []
     for i, d in enumerate(idx):
         if below.iloc[i] and not was_below:
-            start = i
-            was_below = True
+            start_i, was_below = i, True
         elif (not below.iloc[i]) and was_below:
-            low_i = int(np.argmin(px.iloc[start:i + 1].values)) + start
-            episodes_started.append((idx[low_i], px.iloc[low_i], d, px.iloc[i]))
+            low_i = int(np.argmin(px.iloc[start_i:i + 1].values)) + start_i
+            found.append((idx[low_i], px.iloc[low_i], d, px.iloc[i]))
             was_below = False
-    for low_d, low_p, rec_d, rec_p in episodes_started:
+    for low_d, low_p, rec_d, rec_p in found:
         if low_p <= 0:
             continue
-        print(f"  low {low_d:%Y-%m-%d} ${low_p:>7,.2f}  ->  200d reclaim {rec_d:%Y-%m-%d} "
-              f"${rec_p:>7,.2f}   cost of waiting {rec_p/low_p-1:+.0%}   "
-              f"({(rec_d-low_d).days} days)")
+        print(f"  low {low_d:%Y-%m-%d} ${low_p:>9,.2f}  ->  200d reclaim {rec_d:%Y-%m-%d} "
+              f"${rec_p:>9,.2f}   cost of waiting {rec_p/low_p-1:+.0%}   ({(rec_d-low_d).days} days)")
     if was_below:
-        low_i = int(np.argmin(px.iloc[start:].values)) + start
-        print(f"  CURRENT: still below the 200d since {idx[start]:%Y-%m-%d}; low so far "
+        low_i = int(np.argmin(px.iloc[start_i:].values)) + start_i
+        print(f"  CURRENT: below the 200d since {idx[start_i]:%Y-%m-%d}; low so far "
               f"{idx[low_i]:%Y-%m-%d} ${px.iloc[low_i]:,.2f}; reclaim level now "
               f"${ma200.iloc[-1]:,.2f} = {(ma200.iloc[-1]/px.iloc[low_i]-1)*100:+.0f}% above that low")
 
-    print("\nREAD THIS AS: a description of two states, not a probability. One completed deep")
-    print("bear (2022) supplies almost every observation, and the current one has no ending yet.")
+    print("\nREAD THIS AS: a description of states, not a probability. Overlapping daily")
+    print("observations inflate N; the episodes column is the honest sample size.")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # Macro + Crypto Master Dataset
 
-Built: 2026-11-18T09:58:10.512179+00:00
+Built: 2026-11-18T10:57:07.802588+00:00
 
 | Chart | Rows | Span | Source |
 |---|---|---|---|
@@ -123,6 +123,12 @@ Built: 2026-11-18T09:58:10.512179+00:00
 | cmc_total_mcap | 2412 | 2020-04-10 -> 2026-11-18 | CoinMarketCap data-api global-metrics/quotes/historical (daily) |
 | sol_dominance | 2358 | 2020-06-02 -> 2026-11-17 | derived: sol_mcap_cmc / cmc_total_mcap * 100 |
 | soleth_daily | 2411 | 2020-04-10 00:00:00 -> 2026-11-15 00:00:00 | derived from solusd_daily_yahoo / ethusd_daily_bitstamp closes |
+| zecusd_daily_bitfinex | 3673 | 2016-10-29 00:00:00 -> 2026-11-18 00:00:00 | Bitfinex v2 candles trade:1D:tZECUSD |
+| zecbtc_daily_bitfinex | 3674 | 2016-10-28 00:00:00 -> 2026-11-18 00:00:00 | Bitfinex v2 candles trade:1D:tZECBTC (traded cross) |
+| zecusd_daily_okx | 360 | 2025-11-23 16:00:00 -> 2026-11-17 16:00:00 | OKX v5 history-candles ZEC-USDT (1D) |
+| zec_mcap_cmc | 3672 | 2016-10-29 -> 2026-11-17 | CoinMarketCap data-api cryptocurrency/historical id=1437 (daily) |
+| zec_dominance | 2411 | 2020-04-10 -> 2026-11-17 | derived: zec_mcap_cmc / cmc_total_mcap * 100 |
+| zeceth_daily | 3379 | 2017-08-16 00:00:00 -> 2026-11-15 00:00:00 | derived from zecusd_daily_bitfinex / ethusd_daily_bitstamp closes |
 
 FRED series (17) added when FRED_API_KEY env is set.
 On-chain `gn_*` charts: Glassnode MCP (keyless access ended 2026-10-01; frozen unless a key is configured), 30d window per fetch, merged by date

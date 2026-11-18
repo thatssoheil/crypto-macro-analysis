@@ -554,6 +554,151 @@ def fetch_solana():
         print(f"  WARN soleth_daily: {type(exc).__name__}")
 
 
+def fetch_zec():
+    """ZEC history: longest traded series, the BTC cross, dominance and supply.
+
+    ZEC launched 2016-10-28, so the history is deeper than SOL's and includes the
+    2017 bull, the 2018-2020 bear and the 2024-2026 privacy run.
+      zecusd_daily_bitfinex   2016-10-29 ->  longest ZEC/USD daily series that exists
+      zecbtc_daily_bitfinex   2016-10-28 ->  the traded BTC cross, same length
+      zecusd_daily_okx        2025-11-23 ->  OKX only listed ZEC-USDT recently, but it is
+                                              the venue that carries real quote volume and
+                                              the swap the liquidation model needs
+      zec_mcap_cmc            2016-10-29 ->  price, volume, market cap, supply (CMC data-api)
+      zec_dominance           2020-04-10 ->  derived: zec_mcap / cmc_total_mcap (the total-cap
+                                              chart starts 2020-04, so dominance does too)
+      zeceth_daily            2016-10-29 ->  derived from USD closes (no traded ZEC/ETH pair)
+    LAUNCH ARTIFACT: ZEC's first prints on Bitfinex (2016-10-29) were 3,591 USD on slow-start
+    supply, so the all-time high on a raw series is meaningless. Any drawdown read must start
+    2017-01-01 or use a post-launch high - the state study takes --start for this reason.
+    """
+    print("== Zcash: ZEC/USD + ZEC/BTC daily (Bitfinex, longest series) ==")
+    for sym, name, header, src in (
+        ("tZECUSD", "zecusd_daily_bitfinex", ["ts", "open", "high", "low", "close", "volume"],
+         "Bitfinex v2 candles trade:1D:tZECUSD"),
+        ("tZECBTC", "zecbtc_daily_bitfinex", ["ts", "open", "high", "low", "close", "volume"],
+         "Bitfinex v2 candles trade:1D:tZECBTC (traded cross)"),
+    ):
+        r = get(f"https://api-pub.bitfinex.com/v2/candles/trade:1D:{sym}/hist?limit=10000&sort=1",
+                tries=3)
+        rows = []
+        if r:
+            try:
+                for c in r.json():
+                    # Bitfinex order: MTS, OPEN, CLOSE, HIGH, LOW, VOLUME
+                    rows.append([datetime.fromtimestamp(int(c[0]) / 1000, tz=timezone.utc)
+                                 .strftime("%Y-%m-%d %H:%M:%S"), c[1], c[3], c[4], c[2], c[5]])
+            except Exception:
+                rows = []
+        if rows:
+            save_csv(name, rows, header, src)
+        else:
+            FAILED.append(name)
+        time.sleep(1.5)
+
+    print("== Zcash: ZEC/USDT recent venue print (OKX) ==")
+    rows, after, _calls = [], None, 0
+    while _calls < 40:
+        params = "instId=ZEC-USDT&bar=1D&limit=100" + (f"&after={after}" if after else "")
+        rr = get(f"https://www.okx.com/api/v5/market/history-candles?{params}", tries=3)
+        data = (rr.json().get("data") or []) if rr else []
+        if not data:
+            break
+        for c in data:
+            rows.append([datetime.fromtimestamp(int(c[0]) / 1000, tz=timezone.utc)
+                         .strftime("%Y-%m-%d %H:%M:%S"), c[1], c[2], c[3], c[4], c[5], c[7]])
+        after = data[-1][0]
+        _calls += 1
+        if len(data) < 100:
+            break
+        time.sleep(0.25)
+    save_csv("zecusd_daily_okx", sorted(set(tuple(x) for x in rows)),
+             ["ts", "open", "high", "low", "close", "volume", "volume_usd"],
+             "OKX v5 history-candles ZEC-USDT (1D)")
+
+    print("== Zcash: market cap and supply (CoinMarketCap data-api) ==")
+    _CMC_UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                             "(KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+               "Accept": "application/json"}
+
+    def _cmc(url, base, start, chunk_days=350):
+        out, cur = [], datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        end = datetime.now(timezone.utc)
+        while cur < end:
+            nxt = min(cur + timedelta(days=chunk_days), end)
+            params = dict(base, timeStart=int(cur.timestamp()), timeEnd=int(nxt.timestamp()))
+            payload = None
+            for attempt in range(3):
+                try:
+                    rr = requests.get(url, params=params, headers=_CMC_UA, timeout=45)
+                    if rr.status_code == 200:
+                        payload = rr.json().get("data")
+                        if payload:
+                            break
+                except Exception:
+                    pass
+                time.sleep(2 * (attempt + 1))
+            if payload:
+                out.extend(payload.get("quotes") or [])
+            cur = nxt
+            time.sleep(1.2)
+        return out
+
+    _hist = _cmc("https://api.coinmarketcap.com/data-api/v3/cryptocurrency/historical",
+                 {"id": "1437", "convertId": "2781", "interval": "1d"}, "2016-10-28")
+    _by_date = {}
+    for q in _hist:
+        d0 = q.get("timeOpen", "")[:10]
+        qq = q.get("quote") or {}
+        if not d0 or qq.get("close") is None:
+            continue
+        _by_date[d0] = [d0, qq.get("open"), qq.get("high"), qq.get("low"), qq.get("close"),
+                        qq.get("volume"), qq.get("marketCap"), qq.get("circulatingSupply")]
+    if _by_date:
+        save_csv("zec_mcap_cmc", [_by_date[k] for k in sorted(_by_date)],
+                 ["date", "open", "high", "low", "close", "volume_usd", "mcap_usd", "supply"],
+                 "CoinMarketCap data-api cryptocurrency/historical id=1437 (daily)")
+    else:
+        FAILED.append("zec_mcap_cmc")
+
+    print("== Zcash: ZEC.D dominance + ZEC/ETH (derived) ==")
+    try:
+        zec_mc, tot_mc, zec_usd, eth_usd = {}, {}, {}, {}
+        with open(OUT / "zec_mcap_cmc.csv", newline="") as f:
+            rd = csv.reader(f); next(rd, None)
+            for row in rd:
+                if row and row[0] and float(row[6] or 0) > 0:
+                    zec_mc[row[0]] = float(row[6])
+        with open(OUT / "cmc_total_mcap.csv", newline="") as f:
+            rd = csv.reader(f); next(rd, None)
+            for row in rd:
+                if row and row[0] and float(row[1] or 0) > 0:
+                    tot_mc[row[0]] = float(row[1])
+        dom = [[d0, round(zec_mc[d0] / tot_mc[d0] * 100, 5)]
+               for d0 in sorted(set(zec_mc) & set(tot_mc))]
+        if dom:
+            save_csv("zec_dominance", dom, ["date", "pct"],
+                     "derived: zec_mcap_cmc / cmc_total_mcap * 100")
+        with open(OUT / "zecusd_daily_bitfinex.csv", newline="") as f:
+            rd = csv.reader(f); next(rd, None)
+            for row in rd:
+                if row and row[0]:
+                    zec_usd[row[0][:10]] = float(row[4])
+        with open(OUT / "ethusd_daily_bitstamp.csv", newline="") as f:
+            rd = csv.reader(f); next(rd, None)
+            for row in rd:
+                if row and row[0]:
+                    eth_usd[row[0][:10]] = float(row[4])
+        common = sorted(set(zec_usd) & set(eth_usd))
+        rows = [[f"{d0} 00:00:00", round(zec_usd[d0] / eth_usd[d0], 6)] for d0 in common]
+        if rows:
+            save_csv("zeceth_daily", rows, ["ts", "close"],
+                     "derived from zecusd_daily_bitfinex / ethusd_daily_bitstamp closes")
+    except Exception as exc:
+        print(f"  WARN zec derived charts: {type(exc).__name__}")
+        FAILED.append("zec_dominance")
+
+
 # ========== --solana-only fast path ==========
 # Solana onboarding runs alone: the full builder walks Bitstamp back to 2011 and
 # Yahoo at 8s per symbol, which is minutes of network for charts that did not change.
@@ -561,6 +706,16 @@ if "--solana-only" in sys.argv:
     fetch_solana()
     write_index()
     print(f"\nDONE (solana only). {len(manifest['charts'])} charts -> {OUT}")
+    if FAILED:
+        print(f"FAILED ({len(FAILED)}): {', '.join(sorted(FAILED))}")
+        sys.exit(1)
+    sys.exit(0)
+
+# ========== --zec-only fast path ==========
+if "--zec-only" in sys.argv:
+    fetch_zec()
+    write_index()
+    print(f"\nDONE (zec only). {len(manifest['charts'])} charts -> {OUT}")
     if FAILED:
         print(f"FAILED ({len(FAILED)}): {', '.join(sorted(FAILED))}")
         sys.exit(1)
@@ -838,7 +993,7 @@ def _last_csv_date(name):
         rows = [r for r in csv.reader(f) if r and r[0] and r[0] != "date"]
     return rows[-1][0] if rows else None
 
-for _sym in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
+for _sym in ("BTCUSDT", "ETHUSDT", "SOLUSDT", "ZECUSDT"):
     _asset = _sym[:3].lower()
     _have = [_last_csv_date(f"bn_{_suf}_{_asset}") for _suf in _METRIC_COLS.values()]
     _have = [d for d in _have if d]
@@ -887,7 +1042,7 @@ _m = date.today().replace(day=1)
 for _ in range(2):
     _m = (_m - timedelta(days=1)).replace(day=1)
     _months.append(_m)
-for _sym in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
+for _sym in ("BTCUSDT", "ETHUSDT", "SOLUSDT", "ZECUSDT"):
     _asset = _sym[:3].lower()
     _acc = []
     for _m in _months:
@@ -920,8 +1075,14 @@ for _sym in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
         FAILED.append(f"bn_funding_{_asset}")
 
 # ========== 11. SOLANA (onboarded 2026-11-18) ==========
+# Runs BEFORE Zcash: the ZEC dominance chart divides by cmc_total_mcap, which the
+# Solana block fetches.
 print("== SOLANA: price, venue volume, chain economics ==")
 fetch_solana()
+
+# ========== 12. ZCASH (onboarded 2026-11-18) ==========
+print("== ZCASH: price, cross, dominance, supply ==")
+fetch_zec()
 
 # ========== Manifest + README ==========
 write_index()

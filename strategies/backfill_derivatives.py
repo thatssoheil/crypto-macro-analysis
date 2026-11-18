@@ -112,7 +112,10 @@ for sym, start_date in (("BTCUSDT", date(2020, 9, 1)), ("ETHUSDT", date(2021, 12
                         # SOL perp opened 2020-08-11, but Binance's METRICS archive for
                         # alts only starts 2021-12-01 (2021-11-30 is a 404, verified
                         # 2026-11-18). Funding zips go back to 2021-01.
-                        ("SOLUSDT", date(2021, 12, 1))):
+                        ("SOLUSDT", date(2021, 12, 1)),
+                        # ZEC added 2026-11-18; alt metrics archive starts 2021-12-01
+                        # (2021-11-30 is a 404, same as SOL), funding zips from 2020-09.
+                        ("ZECUSDT", date(2021, 12, 1))):
     asset = sym[:3].lower()
     charts = {suf: load_existing(f"bn_{suf}_{asset}") for suf in METRIC_COLS.values()}
     day, end = start_date, date.today()
@@ -153,7 +156,7 @@ for sym, start_date in (("BTCUSDT", date(2020, 9, 1)), ("ETHUSDT", date(2021, 12
 
 # ---------- 3. Binance monthly funding ----------
 print("== Binance monthly funding (daily sums) ==", flush=True)
-for sym in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
+for sym in ("BTCUSDT", "ETHUSDT", "SOLUSDT", "ZECUSDT"):
     asset = sym[:3].lower()
     name = f"bn_funding_{asset}"
     d = load_existing(name)

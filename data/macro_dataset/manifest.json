@@ -1,5 +1,5 @@
 {
-  "built": "2026-11-18T09:58:10.512179+00:00",
+  "built": "2026-11-18T10:57:07.802588+00:00",
   "charts": {
     "btcusd_daily_bitstamp": {
       "file": "btcusd_daily_bitstamp.csv",
@@ -714,6 +714,42 @@
       "rows": 2411,
       "source": "derived from solusd_daily_yahoo / ethusd_daily_bitstamp closes",
       "span": "2020-04-10 00:00:00 -> 2026-11-15 00:00:00"
+    },
+    "zecusd_daily_bitfinex": {
+      "file": "zecusd_daily_bitfinex.csv",
+      "rows": 3673,
+      "source": "Bitfinex v2 candles trade:1D:tZECUSD",
+      "span": "2016-10-29 00:00:00 -> 2026-11-18 00:00:00"
+    },
+    "zecbtc_daily_bitfinex": {
+      "file": "zecbtc_daily_bitfinex.csv",
+      "rows": 3674,
+      "source": "Bitfinex v2 candles trade:1D:tZECBTC (traded cross)",
+      "span": "2016-10-28 00:00:00 -> 2026-11-18 00:00:00"
+    },
+    "zecusd_daily_okx": {
+      "file": "zecusd_daily_okx.csv",
+      "rows": 360,
+      "source": "OKX v5 history-candles ZEC-USDT (1D)",
+      "span": "2025-11-23 16:00:00 -> 2026-11-17 16:00:00"
+    },
+    "zec_mcap_cmc": {
+      "file": "zec_mcap_cmc.csv",
+      "rows": 3672,
+      "source": "CoinMarketCap data-api cryptocurrency/historical id=1437 (daily)",
+      "span": "2016-10-29 -> 2026-11-17"
+    },
+    "zec_dominance": {
+      "file": "zec_dominance.csv",
+      "rows": 2411,
+      "source": "derived: zec_mcap_cmc / cmc_total_mcap * 100",
+      "span": "2020-04-10 -> 2026-11-17"
+    },
+    "zeceth_daily": {
+      "file": "zeceth_daily.csv",
+      "rows": 3379,
+      "source": "derived from zecusd_daily_bitfinex / ethusd_daily_bitstamp closes",
+      "span": "2017-08-16 00:00:00 -> 2026-11-15 00:00:00"
     }
   }
 }

@@ -1,6 +1,6 @@
 # Data Sources
 
-Every series in `data/macro_dataset/` (119 charts) and where it comes from.
+Every series in `data/macro_dataset/` (125 charts) and where it comes from.
 All sources are keyless unless marked. Re-fetch with `bash scripts/refresh.sh`
 or `python strategies/build_macro_dataset.py`.
 
@@ -262,6 +262,38 @@ transactions (Artemis, TokenTerminal paywalled), validator count and staking yie
 Weekly history is NOT stored as a chart: `strategies/sol_macro_report.py` resamples
 `solusd_daily_yahoo` to weeks that END on Sunday, so price keeps one source of truth.
 
+## Zcash (added 2026-11-18)
+
+ZEC's history is deeper than SOL's (launch 2016-10-28) and includes two full cycles.
+
+| Chart | Source | Endpoint | Span | Notes |
+|-------|--------|----------|------|-------|
+| `zecusd_daily_bitfinex` | Bitfinex v2 | `https://api-pub.bitfinex.com/v2/candles/trade:1D:tZECUSD/hist?limit=10000&sort=1` | 2016-10-29 -> | The longest ZEC/USD daily series anywhere keyless. Field order is MTS, OPEN, CLOSE, HIGH, LOW, VOLUME - not OHLC - so a careless read swaps high and close. Volume is in ZEC, not USD. |
+| `zecbtc_daily_bitfinex` | Bitfinex v2 | `.../candles/trade:1D:tZECBTC/hist` | 2016-10-28 -> | The traded BTC cross, same length as the USD series. |
+| `zecusd_daily_okx` | OKX v5 | `.../history-candles?instId=ZEC-USDT&bar=1D` | 2025-11-23 -> | OKX only listed ZEC-USDT recently, but it is the venue with real USD volume ($30M days) and the swap the liquidation model uses. |
+| `zec_mcap_cmc` | CoinMarketCap data-api | `.../cryptocurrency/historical?id=1437&convertId=2781&interval=1d` | 2016-10-29 -> | OHLC + volume + market cap + supply. Two defects, both documented below. |
+| `zec_dominance` | DERIVED | `zec_mcap_cmc / cmc_total_mcap * 100` | 2020-04-10 -> | ZEC.D. Starts with the total-cap chart, not with ZEC. |
+| `zeceth_daily` | DERIVED | `zecusd_daily_bitfinex / ethusd_daily_bitstamp` | 2016-10-29 -> | No venue lists a liquid ZEC/ETH pair, so the ratio is computed. |
+| `bn_oi_zec` / `bn_lsr_zec` / `bn_taker_zec` | Binance archive daily metrics | `.../daily/metrics/ZECUSDT/ZECUSDT-metrics-YYYY-MM-DD.zip` | 2021-12-01 -> | Same alt-archive start as SOL. OI is in ZEC coins. |
+| `bn_funding_zec` | Binance archive monthly funding | `.../monthly/fundingRate/ZECUSDT/...` | 2020-02 -> | Daily SUM of the 8h rates. |
+
+**Two data traps specific to ZEC.**
+1. **The launch artifact.** ZEC's first sessions printed 3,591 (close) and 20,000 (intraday high)
+   on slow-start supply. A raw all-time-high or drawdown read from that high is meaningless;
+   every ATH/drawdown figure in the tapes and studies starts 2017-01-01 (`ath_from` in
+   `strategies/asset_tape.py`, `--start` in `research/drawdown_state_study.py`).
+2. **CMC's ZEC supply is unusable before 2022.** It carries a 10M print in 2017-18 that never
+   happened, plus revision steps. Supply cannot fall, so the read is the running maximum, and
+   the supply/dilution panels start 2022-01 for that reason. No emission model is drawn: Zcash's
+   block count from the free feeds (blockchair) does not reconcile with its published halving
+   heights, and a wrong supply curve is worse than none.
+
+**Not available keyless for Zcash (probed 2026-11-18):** the shielded-pool balance and shielded
+transaction share - the single most important fundamental for a privacy chain. zcashblockexplorer
+and zcha.in are dead or unreachable from this machine, blockchair serves only current totals
+(and its `circulation` field overflows), and the Artemis/TokenTerminal route is paywalled. Any
+privacy-adoption claim in a report is therefore unsourced and must be labelled as such.
+
 ## What is NOT covered (known gaps)
 
 - Per-protocol usage (DAU/DAA, fees, revenue, txns) - paywalled: Artemis and
@@ -273,7 +305,7 @@ Weekly history is NOT stored as a chart: `strategies/sol_macro_report.py` resamp
 ## Refreshing
 
 ```bash
-bash scripts/refresh.sh          # fetch all 119 charts + engine + audit + on-chain gate
+bash scripts/refresh.sh          # fetch all 125 charts + engine + audit + on-chain gate
 bash scripts/refresh.sh --check  # status only
 ```
 
