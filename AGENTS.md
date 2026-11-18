@@ -5,7 +5,7 @@ README.md has the user-facing docs; this file is the operational contract.
 
 ## What this project is
 
-Long-term macro-regime investing research for BTC & ETH. A regime engine scores the
+Long-term macro-regime investing research for BTC, ETH & SOL. A regime engine scores the
 macro environment and decides HOLD crypto / CASH out / BUY the dip, using
 phase-based cashing: hold in risk-on, move to cash on regime shift, rebuy the
 next leg. Everything runs on a locally-owned dataset of 42 CSV charts
@@ -59,6 +59,14 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
    numbers - they would go stale as data appends. Run the script for the
    current number.
 
+7. **The macro composite does not transfer to SOL as built (tested 2026-11-18).** On SOL
+   2023-01 -> 2026-11 the composite (score >= 0) returned -29% while holding returned
+   +649%; it whipsawed (74-88 flips) and sat in cash through the recovery. The 200d and
+   50d MA filters also UNDERPERFORM hold in that window (0.41x and 0.52x). Every arm that
+   looks spectacular on the full 2020-2026 window is monetising 2021 once. Reproduce:
+   `strategies/sol_macro_backtest.py` (it prints the per-window table for exactly this
+   reason). Do not quote a SOL overlay multiple without its RECOVERY-window row.
+
 ## Repo map
 
 | Path | Purpose |
@@ -66,6 +74,9 @@ next leg. Everything runs on a locally-owned dataset of 42 CSV charts
 | `strategies/macro_regime_v3.py` | LIVE regime engine (v4 logic). 14 weighted signals in 4 causal groups, score -3..+3 -> HOLD/ACCUMULATE, HOLD, NEUTRAL, REDUCE, LIQUIDATE + phase label. Consumes local data only, NO fetch. Stateless: prints verdict to stdout, saves nothing. |
 | `strategies/eth_macro_regime.py` | ETH live regime engine (full macro backbone + ETH 200d MA + ETH/BTC + DefiLlama TVL). |
 | `strategies/eth_macro_backtest.py` | ETH regime backtest 2017-2026 (validates 50d/200d MA + dual filters on ETH). |
+| `strategies/sol_macro_regime.py` | SOL live regime engine (macro backbone + SOL 200d MA + SOL/BTC + Solana TVL, stablecoin supply, DEX activity). |
+| `strategies/sol_macro_report.py` | SOL tape as stdout: daily + weekly history, volume, ratios, chain economics, derivatives, macro backdrop, switch levels. |
+| `strategies/sol_macro_backtest.py` | SOL backtest 2020-2026 (hold vs MA filters vs composite) plus the A/B for the two experimental SOL-native signals. |
 | `strategies/btc_eth_rotation.py` | BTC<->ETH rotation engine (validated DUALM50 rule: ETH/BTC 50d MA + ETH 200d MA + VIX/SPX macro gate). Prints the live verdict, the A/B backtest with costs, and the blunt caveats. |
 | `strategies/build_macro_dataset.py` | Fetches all charts (keyless sources; FRED runs when `FRED_API_KEY` set). Slow network job - only re-run to refresh data. `--glassnode-only` is the fast path (on-chain append only, ~10s). |
 | `strategies/audit_dataset.py` | Data-integrity + signal-correctness audit. RUN BEFORE trusting any aggregation. Recomputes every v4 signal independently (all checks pass on every run). |
@@ -123,6 +134,9 @@ system. There is NO cron/schedule - refresh happens only when asked:
 cd ~/projects/crypto-macro-analysis
 ./.venv/bin/python strategies/macro_regime_v3.py       # BTC engine -> verdict to stdout
 ./.venv/bin/python strategies/eth_macro_regime.py     # ETH engine -> verdict to stdout
+./.venv/bin/python strategies/sol_macro_regime.py     # SOL engine -> verdict to stdout
+./.venv/bin/python strategies/sol_macro_report.py     # SOL tape (daily + weekly + chain + derivatives)
+./.venv/bin/python strategies/sol_macro_backtest.py   # SOL backtest + signal A/B
 ./.venv/bin/python strategies/audit_dataset.py         # signal checks (all pass)
 ./.venv/bin/python strategies/macro_backtest_v4.py     # composite backtest -> stdout
 ./.venv/bin/python strategies/eth_macro_backtest.py   # ETH backtest -> stdout
@@ -130,6 +144,7 @@ cd ~/projects/crypto-macro-analysis
 ./.venv/bin/python strategies/build_macro_dataset.py   # refresh dataset (slow, network)
 ./.venv/bin/python strategies/dd_protection_sweep.py   # DD layer sweep -> stdout
 ./.venv/bin/python strategies/liquidity_map.py          # modelled liquidation shelves -> stdout
+./.venv/bin/python strategies/liquidity_map.py --coin SOL    # same model on Solana perps
 ./.venv/bin/python strategies/liquidity_map.py --calibrate   # A/B vs a permuted-volume null
 ```
 
@@ -231,6 +246,27 @@ Verdict bands: >= +1.5 HOLD/ACCUMULATE, >= +0.5 HOLD, <= -1.5 LIQUIDATE,
   frozen marker instead of stale flow numbers. If a key is ever set, the fetch
   resumes automatically. While frozen, `gn_*` charts are historical-only - never
   quote them as live reads.
+
+- **SOLANA (onboarded 2026-11-18).** Four source facts that will otherwise be rediscovered
+  the hard way: (a) the longest keyless SOL daily price series is Yahoo's CCC aggregate
+  `SOL-USD` from 2020-04-10 - Bitstamp only has SOL from 2022-08 and OKX from 2020-09, so
+  Yahoo is the primary and OKX is the venue cross-check (audit enforces a 3% basis bound);
+  (b) DefiLlama's Solana stablecoin chart is QUARTERLY SNAPSHOTS before 2023-01 (the first
+  row is $8.7k, an artifact) - never compute a 30-day change there with a row offset;
+  (c) Deribit's SOL DVOL index published only 2022-05-04 to 2022-11-25 and was then
+  discontinued - it is not in the dataset and must not be re-proposed as a volatility
+  source; (d) Binance's alt metrics archive starts 2021-12-01 for SOLUSDT (the perp is
+  older, the archive is not; funding zips start 2021-01); (e) SOL.D and the ratio charts
+  exist: `sol_dominance` is derived from `sol_mcap_cmc / cmc_total_mcap` (CoinMarketCap
+  data-api - keyless but chunked at 350 days, or it silently samples), `solbtc_daily_okx`
+  is the traded cross and `soleth_daily` is computed because OKX's SOL-ETH market is dead;
+  (f) `bn_funding_sol` daily SUMS are huge in 2022-11-09..19 because Binance ran 2-hour
+  funding at the -2 percent cap that week - 12 prints a day, not a parse error.
+- **`liquidity_map.py` follows `--coin` (fixed 2026-11-18).** The OKX instrument used to be
+  hard-coded to `BTC-USDT-SWAP` while the open-interest lookup and the Gate calibration
+  contract DID follow the coin, so `--coin SOL` modelled Bitcoin's shelves and labelled
+  them Solana. Any new asset must be checked in the heatmap's title line (it prints the
+  coin, the spot and the OI source) before its levels are quoted.
 
 ## Simulation pitfalls
 

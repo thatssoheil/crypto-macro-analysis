@@ -1,6 +1,6 @@
 # crypto-macro-analysis
 
-Long-term investment research: macro-economics analysis + crypto (BTC & ETH) with **phase-based
+Long-term investment research: macro-economics analysis + crypto (BTC, ETH & SOL) with **phase-based
 cashing** — hold in risk-on regimes, move to cash on regime shift, rebuy on the next leg up.
 
 > **For agents/AI:** read [`AGENTS.md`](AGENTS.md) first - it has the golden rules,
@@ -22,7 +22,7 @@ current numbers; docs never hardcode them (they would go stale).
 
 ## What this repo gives you
 
-- **A complete, locally-stored macro + crypto dataset** (98 charts, CSV, one file per series)
+- **A complete, locally-stored macro + crypto dataset** (119 charts, CSV, one file per series)
   covering money supply, rates, inflation, dollar, risk appetite, on-chain flow, and sentiment.
 - **An on-chain layer** (Glassnode MCP; auth-walled since 2026-10-01 - frozen while no key is configured, see "On-chain layer" below): exchange flow, exchange balances, SOPR, NUPL and
   supply-in-profit for BTC and ETH, plus a flow-semantics family (hodler net position change,
@@ -30,7 +30,7 @@ current numbers; docs never hardcode them (they would go stale).
   stored twice, live and point-in-time, and checked against each other on every run (see
   "On-chain layer" below).
 - **A derivatives layer** (keyless Deribit + Binance archive): DVOL, perp open interest,
-  top-trader long/short ratio, taker flow, and funding for BTC and ETH (see "Derivatives" in
+  top-trader long/short ratio, taker flow, and funding for BTC, ETH and SOL (see "Derivatives" in
   SOURCES.md).
 - **A regime engine** that scores the current macro environment into a
   **HOLD / CASH / BUY-the-dip** phase, using 14 weighted signals across 4 causal groups.
@@ -98,7 +98,7 @@ Automation (owner-approved; runs on the owner's Hermes default profile since the
 
 The repo itself stays schedule-free - no cron in repo code.
 
-## The dataset (data/macro_dataset/, 98 charts)
+## The dataset (data/macro_dataset/, 119 charts)
 
 | Group | Series | Source | Span |
 |-------|--------|--------|------|
@@ -172,6 +172,36 @@ when the gate prints CONFIRMED for that metric.
 Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 **Phase 2 CASH** (≤-0.5). Prints the full report to stdout (stateless).
 
+## Solana (added 2026-11-18)
+
+SOL runs the same architecture as ETH: the full macro backbone plus a Solana-native
+group C. The price history is the longest that exists keyless (Yahoo CCC aggregate,
+2020-04-10 ->), cross-checked against the OKX venue print, and the chain economics come
+from DefiLlama (TVL, stablecoin supply on Solana, DEX volume, fees and revenue).
+
+```bash
+./.venv/bin/python strategies/build_macro_dataset.py --solana-only  # refresh the SOL charts
+./.venv/bin/python strategies/sol_macro_regime.py                  # live SOL verdict
+./.venv/bin/python strategies/sol_macro_report.py                  # the tape: daily + weekly + chain + derivatives
+./.venv/bin/python strategies/sol_macro_backtest.py                # 2020-2026 backtest with the signal A/B
+./.venv/bin/python strategies/liquidity_map.py --coin SOL          # modelled SOL liquidation shelves
+```
+
+| Group C (SOL internals) | Weight | Note |
+|---|---|---|
+| SOL vs 200d MA | 2.0 | the regime line, same as BTC/ETH |
+| SOL/BTC vs 200d MA | 1.5 | rotation gate, computed from aligned USD closes |
+| Solana TVL vs 60d MA | 1.0 | capital locked in the chain |
+| Solana stablecoin supply, 30d change | 1.0 | experimental - A/B'd in the backtest |
+| Solana DEX volume 7d vs 90d | 0.5 | experimental - activity trend |
+| Fear & Greed | 0.5 | contrarian trimmer, shared with BTC/ETH |
+
+Relative strength and market share are first-class charts, not afterthoughts:
+`solbtc_daily_okx` (the traded cross), `soleth_daily` (computed - the OKX SOL/ETH market is
+dead), and `sol_dominance` (SOL.D, from `sol_mcap_cmc / cmc_total_mcap`). Weekly history is
+not a separate chart: `sol_macro_report.py` resamples the daily series to weeks ending
+Sunday (28w MA = 196d), so price has one source of truth.
+
 ## Validation (reproduce with the scripts - no stored numbers)
 
 | Finding | Reproduce with |
@@ -192,12 +222,16 @@ Score -3..+3 → **Phase 1 HOLD/ACCUMULATE** (≥+0.5), **Transition**, or
 ```
 crypto-macro-analysis/
   strategies/
-    build_macro_dataset.py   # fetch all 98 charts (keyless + FRED when key set);
-                             #   --glassnode-only = fast on-chain append
+    build_macro_dataset.py   # fetch all 119 charts (keyless + FRED when key set);
+                             #   --glassnode-only = fast on-chain append,
+                             #   --solana-only = fast SOL refresh
     onchain_confidence.py    # live vs point-in-time gate for the on-chain charts
     macro_regime_v3.py       # the live BTC regime engine (14 signals, 4 causal groups)
     eth_macro_regime.py      # live ETH regime engine (macro backbone + ETH internals)
     eth_macro_backtest.py    # ETH backtest (2017-2026)
+    sol_macro_regime.py      # live SOL regime engine (macro backbone + Solana internals)
+    sol_macro_report.py      # SOL tape: daily + weekly history, volume, chain, derivatives
+    sol_macro_backtest.py    # SOL backtest (2020-2026) + the experimental-signal A/B
     audit_dataset.py         # data-integrity + signal-correctness audit
     macro_backtest_v4.py     # multi-signal composite backtest (2017-2026)
     macro_backtest_deep.py   # 200d-MA filter, deep history (2011-2026)
@@ -209,7 +243,7 @@ crypto-macro-analysis/
     macro_backtest_v2.py     # v2 backtest (200d-MA filter)
     build_btc_dataset.py     # standalone BTC price builder (blockchain.info)
   data/
-    macro_dataset/           # 98 charts, one CSV per series (+ manifest.json, README.md)
+    macro_dataset/           # 119 charts, one CSV per series (+ manifest.json, README.md)
   scripts/
     refresh.sh               # on-demand fetch + engine + audit (stateless)
   .env.example               # copy to .env and fill in FRED_API_KEY

@@ -57,9 +57,14 @@ for name in charts:
         # RRP operations were sparse before the facility went daily (2013-14);
         # judge only the dense era - zero gaps there since.
         gaps = gaps[gaps.index >= pd.Timestamp("2014-01-01", tz="UTC")]
-    if name in ("bn_lsr_btc", "bn_lsr_eth", "bn_taker_btc", "bn_taker_eth"):
+    if name in ("bn_lsr_btc", "bn_lsr_eth", "bn_taker_btc", "bn_taker_eth",
+                "bn_lsr_sol", "bn_taker_sol"):
         # Binance's archive has empty top-trader/taker fields for much of 2022
         # (source-side, documented in SOURCES.md); judge the clean era only.
+        gaps = gaps[gaps.index >= pd.Timestamp("2023-01-01", tz="UTC")]
+    if name == "sol_stablecoins_defillama":
+        # DefiLlama serves Solana stablecoins as quarterly snapshots until 2023-01,
+        # then daily. Judging the sparse era would flag a source property, not a bug.
         gaps = gaps[gaps.index >= pd.Timestamp("2023-01-01", tz="UTC")]
     big_gaps = (gaps > allowed).sum() if len(gaps) else 0
     # 2. duplicate timestamps
@@ -88,7 +93,9 @@ for name in charts:
                       "gn_etf_flows_net_btc", "gn_etf_flows_net_btc_pit",
                       "gn_etf_flows_net_eth", "gn_etf_flows_net_eth_pit",
                       # 2026-09-24 derivatives: funding is signed
-                      "bn_funding_btc", "bn_funding_eth")
+                      "bn_funding_btc", "bn_funding_eth",
+                      # 2026-11-18 Solana onboarding
+                      "bn_funding_sol")
     vals = df.select_dtypes(include=[np.number])
     negs = int((vals < 0).sum().sum()) if not vals.empty else 0
     neg_flag = negs and not neg_ok
@@ -101,11 +108,39 @@ for name in charts:
 print(f"\n  Charts needing review: {problems if problems else 'NONE'}")
 print(f"  Total charts: {len(charts)}")
 
+# --- SOLANA CROSS-VENUE + SANITY (added 2026-11-18) ---------------------------------
+# Onboarding a new asset means the price series is new plumbing: prove the two venues
+# agree and that an obviously wrong scale (a decimal slip, a stale file) cannot pass.
+_sol = load("solusd_daily_yahoo")
+_solx = load("solusd_daily_okx")
+if _sol is not None and _solx is not None:
+    basis = abs(float(_sol["close"].iloc[-1]) / float(_solx["close"].iloc[-1]) - 1) * 100
+    print(f"  [{'PASS' if basis < 3 else 'FAIL'}] sol_venues: Yahoo vs OKX last close basis {basis:.2f}% (limit 3%)")
+    if basis >= 3:
+        problems.append("solusd_cross_venue")
+    hi_all = float(_sol["high"].max())
+    print(f"  [{'PASS' if 200 < hi_all < 400 else 'FAIL'}] sol_scale: intraday ATH ${hi_all:,.2f} in the 200-400 range")
+    _tvl = load("sol_tvl_defillama")
+    _stb = load("sol_stablecoins_defillama")
+    for _nm, _df in (("sol_tvl", _tvl), ("sol_stablecoins", _stb)):
+        if _df is None or _df.empty:
+            continue
+        _col = _df.select_dtypes(include=[np.number]).columns[0]
+        _neg = int((_df[_col] < 0).sum())
+        print(f"  [{'PASS' if _neg == 0 else 'FAIL'}] {_nm}: negatives in {_col} = {_neg}")
+        if _neg:
+            problems.append(_nm)
+
 # --- TRAILING AGE (added 2026-11-04) -------------------------------------------------
 # The gap checks above measure gaps BETWEEN rows, so a series that simply STOPS has no
 # trailing gap and reads as healthy forever. This block makes the age of the last
 # observation explicit, which is the only thing that catches a dead feed.
-FRESH = {"monthly": 75, "weekly": 14, "daily": 10}
+# 2026-11-18: monthly raised 75 -> 90 because M2SL genuinely publishes ~2.5 months behind
+# (verified against FRED: latest observation 2026-09-01 on 2026-11-18, dataset in sync). The
+# limit is meant to catch a DEAD feed, not the release calendar. Same reasoning for the
+# funding family: Binance ships monthly zips, so a 6-week-old row is normal, not stale.
+FRESH = {"monthly": 90, "weekly": 14, "daily": 10, "funding": 45}
+FUNDING_SET = {"bn_funding_btc", "bn_funding_eth", "bn_funding_sol"}
 MONTHLY_SET = {"fred_cpi", "fred_pce", "fred_unemployment", "fred_us_m2", "fred_nonfarm_payrolls"}
 WEEKLY_SET = {"fred_fed_balance_sheet", "fred_tga", "fred_rrp", "fred_jobless_claims"}
 now = pd.Timestamp.now(tz="UTC")
@@ -115,6 +150,7 @@ for name in charts:
     if df is None or len(df) == 0:
         continue
     limit = (FRESH["monthly"] if name in MONTHLY_SET
+             else FRESH["funding"] if name in FUNDING_SET
              else FRESH["weekly"] if name in WEEKLY_SET else FRESH["daily"])
     age = (now - df.index[-1]).days
     if age > limit:

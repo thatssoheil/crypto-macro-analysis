@@ -290,6 +290,282 @@ def bitstamp_ohlc(pair, step, name, header, source, max_iters=1000):
     rows = sorted(set(tuple(r) for r in rows))
     save_csv(name, rows, header, source)
 
+def fetch_solana():
+    """SOL-USD history, venue volume, and Solana chain economics (onboarded 2026-11-18).
+
+    Longest keyless history per chart, all verified live on 2026-11-18:
+      SOL-USD daily OHLCV       Yahoo (CCC aggregate)  2020-04-10 ->  SOL spot opened April 2020;
+                                                       no keyless source starts earlier.
+      SOL-USDT daily OHLCV      OKX                   2020-09-29 ->  second venue print, plus the
+                                                       quote (USD) volume the cross-check needs.
+      Solana chain TVL          DefiLlama             2021-03-17 ->
+      Solana stablecoin supply  DefiLlama             2021-09-10 ->  DAILY only from 2023; 2022 is
+                                                       sparse, so calendar-anchored changes only.
+      Solana DEX volume         DefiLlama             2021-10-02 ->
+      Solana fees + revenue     DefiLlama             2021-01-17 ->
+      SOL DVOL / OI / funding   Deribit + Binance archive (section 10; deep history via
+                                strategies/backfill_derivatives.py).
+    Weekly history is deliberately NOT a chart: it is a deterministic resample of the daily
+    series (strategies/sol_macro_report.py), so price keeps exactly one source of truth.
+    """
+    print("== Solana: SOL-USD daily (Yahoo, longest series) ==")
+    r = get("https://query1.finance.yahoo.com/v8/finance/chart/SOL-USD?range=10y&interval=1d", base_wait=10)
+    if r:
+        _res = r.json()["chart"]["result"][0]
+        _q = _res["indicators"]["quote"][0]
+        rows = []
+        for _t, _o, _h, _l, _c, _v in zip(_res["timestamp"], _q["open"], _q["high"], _q["low"],
+                                          _q["close"], _q["volume"]):
+            if _c is None:
+                continue
+            rows.append([datetime.fromtimestamp(_t, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                         _o, _h, _l, _c, _v if _v is not None else 0])
+        save_csv("solusd_daily_yahoo", rows, ["ts", "open", "high", "low", "close", "volume"],
+                 "Yahoo Finance SOL-USD (CCC aggregate)")
+    else:
+        FAILED.append("solusd_daily_yahoo")
+    time.sleep(8)
+
+    print("== Solana: SOL-USDT daily (OKX venue print + USD volume) ==")
+    rows, after, _calls = [], None, 0
+    while _calls < 60:
+        params = f"instId=SOL-USDT&bar=1D&limit=100" + (f"&after={after}" if after else "")
+        rr = get(f"https://www.okx.com/api/v5/market/history-candles?{params}", tries=3)
+        data = (rr.json().get("data") or []) if rr else []
+        if not data:
+            break
+        for c in data:
+            rows.append([datetime.fromtimestamp(int(c[0]) / 1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                         c[1], c[2], c[3], c[4], c[5], c[7]])
+        after = data[-1][0]
+        _calls += 1
+        if len(data) < 100:
+            break
+        time.sleep(0.25)
+    save_csv("solusd_daily_okx", sorted(set(tuple(x) for x in rows)),
+             ["ts", "open", "high", "low", "close", "volume", "volume_usd"],
+             "OKX v5 history-candles SOL-USDT (1D)")
+
+    print("== Solana: chain TVL (DefiLlama) ==")
+    r = get("https://api.llama.fi/v2/historicalChainTvl/Solana")
+    if r:
+        rows = [[datetime.fromtimestamp(p["date"], tz=timezone.utc).strftime("%Y-%m-%d"), p["tvl"]]
+                for p in r.json()]
+        save_csv("sol_tvl_defillama", rows, ["date", "tvl_usd"],
+                 "DefiLlama historicalChainTvl/Solana")
+    else:
+        FAILED.append("sol_tvl_defillama")
+
+    print("== Solana: stablecoin supply on Solana (DefiLlama) ==")
+    r = get("https://stablecoins.llama.fi/stablecoincharts/Solana")
+    rows = []
+    if r:
+        try:
+            for p in r.json():
+                v = (p.get("totalCirculatingUSD") or {}).get("peggedUSD")
+                if v is None:
+                    continue
+                rows.append([datetime.fromtimestamp(int(p["date"]), tz=timezone.utc).strftime("%Y-%m-%d"), v])
+        except Exception:
+            rows = []
+    if rows:
+        save_csv("sol_stablecoins_defillama", rows, ["date", "usd"],
+                 "DefiLlama stablecoincharts/Solana (peggedUSD circulating)")
+    else:
+        FAILED.append("sol_stablecoins_defillama")
+
+    print("== Solana: DEX volume (DefiLlama) ==")
+    r = get("https://api.llama.fi/overview/dexs/solana?excludeTotalDataChart=false&excludeTotalDataChartBreakdown=true")
+    rows = []
+    if r:
+        try:
+            rows = [[datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d"), v]
+                    for ts, v in (r.json().get("totalDataChart") or [])]
+        except Exception:
+            rows = []
+    if rows:
+        save_csv("sol_dex_volume_defillama", rows, ["date", "usd"],
+                 "DefiLlama overview/dexs/solana (daily DEX volume)")
+    else:
+        FAILED.append("sol_dex_volume_defillama")
+
+    print("== Solana: chain fees + revenue (DefiLlama) ==")
+    # fees = what users paid; revenue = the burned/retained share. Two payloads, one chart.
+    _fees, _rev = {}, {}
+    r = get("https://api.llama.fi/summary/fees/solana?dataType=dailyFees")
+    if r:
+        for ts, v in (r.json().get("totalDataChart") or []):
+            _fees[datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")] = v
+    r = get("https://api.llama.fi/summary/fees/solana?dataType=dailyRevenue")
+    if r:
+        for ts, v in (r.json().get("totalDataChart") or []):
+            _rev[datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")] = v
+    rows = [[d0, _fees.get(d0, ""), _rev.get(d0, "")] for d0 in sorted(set(_fees) | set(_rev))]
+    if rows:
+        save_csv("sol_fees_defillama", rows, ["date", "fees_usd", "revenue_usd"],
+                 "DefiLlama summary/fees/solana (dailyFees + dailyRevenue)")
+    else:
+        FAILED.append("sol_fees_defillama")
+
+    print("== Solana: SOL/BTC venue pair (OKX) ==")
+    # The actual traded cross, not a computed ratio: it carries its own price and
+    # quote volume, so a stale or thin print is visible (zero-volume days = 0 in
+    # the full history, verified 2026-11-18). The engine still computes SOL/BTC
+    # from aligned USD closes for signals; this chart is the venue truth to check it.
+    rows, after, _calls = [], None, 0
+    while _calls < 60:
+        params = "instId=SOL-BTC&bar=1D&limit=100" + (f"&after={after}" if after else "")
+        rr = get(f"https://www.okx.com/api/v5/market/history-candles?{params}", tries=3)
+        data = (rr.json().get("data") or []) if rr else []
+        if not data:
+            break
+        for c in data:
+            rows.append([datetime.fromtimestamp(int(c[0]) / 1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                         c[1], c[2], c[3], c[4], c[5], c[7]])
+        after = data[-1][0]
+        _calls += 1
+        if len(data) < 100:
+            break
+        time.sleep(0.25)
+    save_csv("solbtc_daily_okx", sorted(set(tuple(x) for x in rows)),
+             ["ts", "open", "high", "low", "close", "volume", "volume_usd"],
+             "OKX v5 history-candles SOL-BTC (1D, traded cross)")
+
+    print("== Solana: market cap + total crypto market cap (CoinMarketCap data-api) ==")
+    # SOL.D (Solana dominance) needs BOTH sides: SOL's market cap and the total crypto
+    # market cap. CoinGecko refuses both keyless (global chart is PRO-only, market_chart
+    # caps at 365 days), so we use CMC's public data-api, which answers keyless but only
+    # in chunks - 350 days per call, otherwise it silently samples. Verified 2026-11-18.
+    _CMC_UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                             "(KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+               "Accept": "application/json"}
+
+    def _cmc_quotes(url, base, start="2020-04-10", chunk_days=350):
+        out, cur = [], datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        end = datetime.now(timezone.utc)
+        while cur < end:
+            nxt = min(cur + timedelta(days=chunk_days), end)
+            params = dict(base, timeStart=int(cur.timestamp()), timeEnd=int(nxt.timestamp()))
+            payload = None
+            for attempt in range(3):
+                try:
+                    rr = requests.get(url, params=params, headers=_CMC_UA, timeout=45)
+                    if rr.status_code == 200:
+                        payload = rr.json().get("data")
+                        if payload:
+                            break
+                except Exception:
+                    pass
+                time.sleep(2 * (attempt + 1))
+            if payload:
+                out.extend(payload.get("quotes") or [])
+            else:
+                print(f"    CMC chunk {cur:%Y-%m-%d} failed")
+            cur = nxt
+            time.sleep(1.2)
+        return out
+
+    _sol_hist = _cmc_quotes("https://api.coinmarketcap.com/data-api/v3/cryptocurrency/historical",
+                            {"id": "5426", "convertId": "2781", "interval": "1d"})
+    # chunk boundaries repeat a day (timeStart/timeEnd are both inclusive) - key by date
+    _by_date = {}
+    for q in _sol_hist:
+        d0 = q.get("timeOpen", "")[:10]
+        qq = q.get("quote") or {}
+        if not d0 or qq.get("close") is None:
+            continue
+        _by_date[d0] = [d0, qq.get("open"), qq.get("high"), qq.get("low"), qq.get("close"),
+                        qq.get("volume"), qq.get("marketCap"), qq.get("circulatingSupply")]
+    _rows = [_by_date[k] for k in sorted(_by_date)]
+    if _rows:
+        save_csv("sol_mcap_cmc", _rows,
+                 ["date", "open", "high", "low", "close", "volume_usd", "mcap_usd", "supply"],
+                 "CoinMarketCap data-api cryptocurrency/historical id=5426 (daily)")
+    else:
+        FAILED.append("sol_mcap_cmc")
+
+    _glob_hist = _cmc_quotes("https://api.coinmarketcap.com/data-api/v3/global-metrics/quotes/historical",
+                             {"convertId": "2781", "interval": "1d"})
+    _by_date = {}
+    for q in _glob_hist:
+        d0 = q.get("timestamp", "")[:10]
+        qq = (q.get("quote") or [{}])[0]
+        if not d0 or qq.get("totalMarketCap") is None:
+            continue
+        _by_date[d0] = [d0, qq.get("totalMarketCap"), q.get("btcDominance"), q.get("ethDominance")]
+    _rows = [_by_date[k] for k in sorted(_by_date)]
+    if _rows:
+        save_csv("cmc_total_mcap", _rows,
+                 ["date", "total_mcap_usd", "btc_dominance", "eth_dominance"],
+                 "CoinMarketCap data-api global-metrics/quotes/historical (daily)")
+    else:
+        FAILED.append("cmc_total_mcap")
+
+    # SOL.D = SOL market cap / total crypto market cap. Derived, so it is rebuilt from
+    # the two committed inputs on every run and can never disagree with them.
+    print("== Solana: SOL.D dominance (derived from the two charts above) ==")
+    try:
+        _sol_rows = {}
+        with open(OUT / "sol_mcap_cmc.csv", newline="") as f:
+            rd = csv.reader(f); next(rd, None)
+            for row in rd:
+                if row and row[0] and float(row[6] or 0) > 0:
+                    _sol_rows[row[0]] = float(row[6])
+        _tot_rows = {}
+        with open(OUT / "cmc_total_mcap.csv", newline="") as f:
+            rd = csv.reader(f); next(rd, None)
+            for row in rd:
+                if row and row[0] and float(row[1] or 0) > 0:
+                    _tot_rows[row[0]] = float(row[1])
+        dom = [[d0, round(_sol_rows[d0] / _tot_rows[d0] * 100, 4)]
+               for d0 in sorted(set(_sol_rows) & set(_tot_rows))]
+        if dom:
+            save_csv("sol_dominance", dom, ["date", "pct"],
+                     "derived: sol_mcap_cmc / cmc_total_mcap * 100")
+        else:
+            FAILED.append("sol_dominance")
+    except Exception as exc:
+        FAILED.append("sol_dominance")
+        print(f"  WARN sol_dominance: {type(exc).__name__}")
+
+    print("== Solana: SOL/ETH (derived from aligned USD closes) ==")
+    try:
+        _sol = {}
+        with open(OUT / "solusd_daily_yahoo.csv", newline="") as f:
+            rd = csv.reader(f); next(rd, None)
+            for row in rd:
+                if row and row[0]:
+                    _sol[row[0][:10]] = float(row[4])
+        _eth = {}
+        with open(OUT / "ethusd_daily_bitstamp.csv", newline="") as f:
+            rd = csv.reader(f); next(rd, None)
+            for row in rd:
+                if row and row[0]:
+                    _eth[row[0][:10]] = float(row[4])
+        common = sorted(set(_sol) & set(_eth))
+        rows = [[f"{d0} 00:00:00", round(_sol[d0] / _eth[d0], 6)] for d0 in common]
+        if rows:
+            save_csv("soleth_daily", rows, ["ts", "close"],
+                     "derived from solusd_daily_yahoo / ethusd_daily_bitstamp closes")
+        else:
+            FAILED.append("soleth_daily")
+    except Exception as exc:
+        FAILED.append("soleth_daily")
+        print(f"  WARN soleth_daily: {type(exc).__name__}")
+
+
+# ========== --solana-only fast path ==========
+# Solana onboarding runs alone: the full builder walks Bitstamp back to 2011 and
+# Yahoo at 8s per symbol, which is minutes of network for charts that did not change.
+if "--solana-only" in sys.argv:
+    fetch_solana()
+    write_index()
+    print(f"\nDONE (solana only). {len(manifest['charts'])} charts -> {OUT}")
+    if FAILED:
+        print(f"FAILED ({len(FAILED)}): {', '.join(sorted(FAILED))}")
+        sys.exit(1)
+    sys.exit(0)
+
 # ========== --glassnode-only fast path (used by the daily check) ==========
 # Appends the rolling-window on-chain charts without refetching the slow
 # sources (Bitstamp walks 15 years, Yahoo is rate-limited to ~8s/call).
@@ -532,7 +808,7 @@ else:
 print("== Derivatives: Deribit DVOL ==")
 _DERIBIT = "https://www.deribit.com/api/v2/public/get_volatility_index_data"
 _dvol_start = int((datetime.now(timezone.utc) - timedelta(days=1000)).timestamp() * 1000)
-for _cur, _name in (("BTC", "dvol_btc"), ("ETH", "dvol_eth")):
+for _cur, _name in (("BTC", "dvol_btc"), ("ETH", "dvol_eth")):   # SOL DVOL died 2022-11-25
     try:
         r = get(f"{_DERIBIT}?currency={_cur}&start_timestamp={_dvol_start}&end_timestamp={int(time.time()*1000)}&resolution=1D", tries=2)
         pts = ((r.json().get("result") or {}).get("data") or []) if r else []
@@ -562,7 +838,7 @@ def _last_csv_date(name):
         rows = [r for r in csv.reader(f) if r and r[0] and r[0] != "date"]
     return rows[-1][0] if rows else None
 
-for _sym in ("BTCUSDT", "ETHUSDT"):
+for _sym in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
     _asset = _sym[:3].lower()
     _have = [_last_csv_date(f"bn_{_suf}_{_asset}") for _suf in _METRIC_COLS.values()]
     _have = [d for d in _have if d]
@@ -611,7 +887,7 @@ _m = date.today().replace(day=1)
 for _ in range(2):
     _m = (_m - timedelta(days=1)).replace(day=1)
     _months.append(_m)
-for _sym in ("BTCUSDT", "ETHUSDT"):
+for _sym in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
     _asset = _sym[:3].lower()
     _acc = []
     for _m in _months:
@@ -642,6 +918,10 @@ for _sym in ("BTCUSDT", "ETHUSDT"):
         merge_csv(f"bn_funding_{_asset}", _acc, ["date", "value"], f"Binance monthly fundingRate ({_sym}, daily sums)")
     else:
         FAILED.append(f"bn_funding_{_asset}")
+
+# ========== 11. SOLANA (onboarded 2026-11-18) ==========
+print("== SOLANA: price, venue volume, chain economics ==")
+fetch_solana()
 
 # ========== Manifest + README ==========
 write_index()

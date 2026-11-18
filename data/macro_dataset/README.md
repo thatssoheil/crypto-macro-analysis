@@ -1,6 +1,6 @@
 # Macro + Crypto Master Dataset
 
-Built: 2026-11-15T02:15:16.175404+00:00
+Built: 2026-11-18T09:58:10.512179+00:00
 
 | Chart | Rows | Span | Source |
 |---|---|---|---|
@@ -112,6 +112,17 @@ Built: 2026-11-15T02:15:16.175404+00:00
 | gn_binance_outflow_eth_pit | 33 | 2026-08-28 -> 2026-09-29 | Glassnode MCP /v1/metrics/transactions/transfers_volume_from_exchanges_sum_pit [ETH] (merged; 30d window per fetch) |
 | btc_15m_binance | 236640 | 2020-01-01 00:00:00 -> 2026-09-30 23:45:00 | Binance USD-M futures daily klines 15m zips (data.binance.vision) |
 | bn_metrics_15m_btc | 213074 | 2020-09-01 00:00:00 -> 2026-09-30 23:45:00 | Binance USD-M futures daily metrics zips 5m snapshots resampled to 15m last-per-bucket (data.binance.vision) |
+| solusd_daily_yahoo | 2414 | 2020-04-10 00:00:00 -> 2026-11-18 00:00:00 | Yahoo Finance SOL-USD (CCC aggregate) |
+| solusd_daily_okx | 2241 | 2020-09-29 16:00:00 -> 2026-11-17 16:00:00 | OKX v5 history-candles SOL-USDT (1D) |
+| sol_tvl_defillama | 2073 | 2021-03-17 -> 2026-11-18 | DefiLlama historicalChainTvl/Solana |
+| sol_stablecoins_defillama | 1653 | 2021-09-10 -> 2026-11-18 | DefiLlama stablecoincharts/Solana (peggedUSD circulating) |
+| sol_dex_volume_defillama | 1871 | 2021-10-02 -> 2026-11-18 | DefiLlama overview/dexs/solana (daily DEX volume) |
+| sol_fees_defillama | 2131 | 2021-01-17 -> 2026-11-17 | DefiLlama summary/fees/solana (dailyFees + dailyRevenue) |
+| solbtc_daily_okx | 2241 | 2020-09-29 16:00:00 -> 2026-11-17 16:00:00 | OKX v5 history-candles SOL-BTC (1D, traded cross) |
+| sol_mcap_cmc | 2413 | 2020-04-10 -> 2026-11-17 | CoinMarketCap data-api cryptocurrency/historical id=5426 (daily) |
+| cmc_total_mcap | 2412 | 2020-04-10 -> 2026-11-18 | CoinMarketCap data-api global-metrics/quotes/historical (daily) |
+| sol_dominance | 2358 | 2020-06-02 -> 2026-11-17 | derived: sol_mcap_cmc / cmc_total_mcap * 100 |
+| soleth_daily | 2411 | 2020-04-10 00:00:00 -> 2026-11-15 00:00:00 | derived from solusd_daily_yahoo / ethusd_daily_bitstamp closes |
 
 FRED series (17) added when FRED_API_KEY env is set.
 On-chain `gn_*` charts: Glassnode MCP (keyless access ended 2026-10-01; frozen unless a key is configured), 30d window per fetch, merged by date

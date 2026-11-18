@@ -1,6 +1,6 @@
 # Data Sources
 
-Every series in `data/macro_dataset/` (98 charts) and where it comes from.
+Every series in `data/macro_dataset/` (119 charts) and where it comes from.
 All sources are keyless unless marked. Re-fetch with `bash scripts/refresh.sh`
 or `python strategies/build_macro_dataset.py`.
 
@@ -200,19 +200,67 @@ first flap 2026-09-24, permanent 2026-10-01). All keyless; these sources have no
 
 | Chart | Source | What it shows |
 |-------|--------|---------------|
-| `dvol_btc` / `dvol_eth` | Deribit public API `get_volatility_index_data` | DVOL daily close (options-implied 30d vol index, points). Fetched+merged each run. |
-| `bn_oi_btc` / `bn_oi_eth` | Binance archive `data.binance.vision` daily metrics zips | USD-M perp open interest (coins), 23:45 UTC snapshot. Append-only: the builder fetches missing days (3-day overlap, max 60/run). |
-| `bn_lsr_btc` / `bn_lsr_eth` | same | Top-trader long/short ratio (accounts). >1 = top traders net long. |
-| `bn_taker_btc` / `bn_taker_eth` | same | Taker buy/sell volume ratio. >1 = aggressive buying. |
-| `bn_funding_btc` / `bn_funding_eth` | Binance archive monthly fundingRate zips | Daily SUM of the 8h funding rates (fraction/day). ~1 month lag (monthly files only). |
+| `dvol_btc` / `dvol_eth` | Deribit public API `get_volatility_index_data` | DVOL daily close (options-implied 30d vol index, points). Fetched+merged each run. No SOL twin - that index was discontinued 2022-11-25. |
+| `bn_oi_btc` / `bn_oi_eth` / `bn_oi_sol` | Binance archive `data.binance.vision` daily metrics zips | USD-M perp open interest (coins), 23:45 UTC snapshot. Append-only: the builder fetches missing days (3-day overlap, max 60/run). |
+| `bn_lsr_btc` / `bn_lsr_eth` / `bn_lsr_sol` | same | Top-trader long/short ratio (accounts). >1 = top traders net long. |
+| `bn_taker_btc` / `bn_taker_eth` / `bn_taker_sol` | same | Taker buy/sell volume ratio. >1 = aggressive buying. |
+| `bn_funding_btc` / `bn_funding_eth` / `bn_funding_sol` | Binance archive monthly fundingRate zips | Daily SUM of the 8h funding rates (fraction/day). ~1 month lag (monthly files only). |
 
 Deep history: `strategies/backfill_derivatives.py` (one-time; metrics from 2020-09 BTC /
-2021-12 ETH; funding from 2020-01; DVOL from launch). The builder appends recent days -
+2021-12 ETH / 2021-12 SOL; funding from 2020-01; DVOL from launch). The builder appends recent days -
 the committed CSVs are the history. Notes: `api.binance.com` is geo-blocked from this
 machine but the `data.binance.vision` archive is NOT (different host); old metrics files
 (2020) have a different granularity but the same columns. Source gaps (verified
 2026-09-24): top-trader L/S has no values 2021-12-30 through mid-Dec 2022 (empty fields
 in the archive); the taker ratio has none 2021-12-30 through early May 2022.
+
+## Solana (added 2026-11-18)
+
+Onboarding SOL as a third engine asset. Every series below was probed live on
+2026-11-18; the span column is the REAL first row, not the vendor's claim.
+
+| Chart | Source | Endpoint | Span | Notes |
+|-------|--------|----------|------|-------|
+| `solusd_daily_yahoo` | Yahoo Finance (CCC aggregate) | `.../chart/SOL-USD?range=10y&interval=1d` | 2020-04-10 -> | Longest daily SOL history that exists keyless (SOL spot opened April 2020). OHLC + USD volume. THE price series the SOL engine uses. |
+| `solusd_daily_okx` | OKX v5 | `https://www.okx.com/api/v5/market/history-candles?instId=SOL-USDT&bar=1D` | 2020-09-29 -> | Venue print + real quote volume. Paginated with `after` (100 per call, newest first). Cross-check: must stay within 3 percent of Yahoo (audit enforces it). |
+| `sol_tvl_defillama` | DefiLlama | `https://api.llama.fi/v2/historicalChainTvl/Solana` | 2021-03-17 -> | Chain TVL, daily. |
+| `sol_stablecoins_defillama` | DefiLlama | `https://stablecoins.llama.fi/stablecoincharts/Solana` | 2021-09-10 -> | Stablecoin supply minted on Solana (peggedUSD circulating). QUARTERLY SNAPSHOTS until 2023-01, daily after: any change window before 2023 is not a 30-day read. The audit judges gaps from 2023 only. |
+| `sol_dex_volume_defillama` | DefiLlama | `https://api.llama.fi/overview/dexs/solana?excludeTotalDataChart=false` | 2021-10-02 -> | Daily DEX volume (USD). First ~4 weeks are warmup junk ($3, $100, $42k) - do not read the level before 2021-11. |
+| `sol_fees_defillama` | DefiLlama | `https://api.llama.fi/summary/fees/solana?dataType=dailyFees` + `?dataType=dailyRevenue` | 2021-01-17 -> | Two payloads merged into one chart: `fees_usd` (what users paid) and `revenue_usd` (the burned share). |
+| `bn_oi_sol` / `bn_lsr_sol` / `bn_taker_sol` | Binance archive `data.binance.vision` daily metrics zips | `.../daily/metrics/SOLUSDT/SOLUSDT-metrics-YYYY-MM-DD.zip` | 2021-12-01 -> | SOL perp opened 2020-08-11 but the alt METRICS archive only starts 2021-12-01 (2021-11-30 returns 404). OI is in SOL coins; multiply by the close for USD. |
+| `bn_funding_sol` | Binance archive monthly fundingRate zips | `.../monthly/fundingRate/SOLUSDT/SOLUSDT-fundingRate-YYYY-MM.zip` | 2021-01 -> | Daily SUM of the 8h rates (fraction/day), ~1 month lag. |
+| `solbtc_daily_okx` | OKX v5 | `.../history-candles?instId=SOL-BTC&bar=1D` | 2020-09-29 -> | The actual TRADED cross (price + BTC volume), zero zero-volume days. The engine still computes SOL/BTC from aligned USD closes; this chart is the venue check (median basis last 30d is printed in the tape and sits near +0.5%). |
+| `sol_mcap_cmc` | CoinMarketCap data-api (keyless, undocumented) | `https://api.coinmarketcap.com/data-api/v3/cryptocurrency/historical?id=5426&convertId=2781&interval=1d` | 2020-04-10 -> | Daily OHLC + volume + market cap + circulating supply. Market cap is 0 before 2020-06 (CMC did not track supply yet). |
+| `cmc_total_mcap` | CoinMarketCap data-api | `.../data-api/v3/global-metrics/quotes/historical?convertId=2781&interval=1d` | 2020-04-10 -> | Total crypto market cap + BTC and ETH dominance. The denominator for SOL.D and a macro read in its own right. |
+| `sol_dominance` | DERIVED | `sol_mcap_cmc / cmc_total_mcap * 100` | 2020-06-02 -> | SOL.D exactly as a charting platform shows it. Rebuilt from the two committed inputs every run, so it can never disagree with them. |
+| `soleth_daily` | DERIVED | `solusd_daily_yahoo / ethusd_daily_bitstamp` closes | 2020-04-10 -> | The OKX SOL-ETH market is dead (flat price, zero volume since listing), so the ratio is computed, never fetched. |
+
+**CoinMarketCap plumbing note (verified 2026-11-18).** CoinGecko cannot serve either input
+keyless (the global market-cap chart is PRO-only, `market_chart` caps at 365 days), so the
+SOL.D denominator comes from CMC's public data-api. It answers keyless but ONLY in chunks:
+a single request covering the whole history silently returns a SAMPLED series (731 rows for
+2,400 days). The fetcher therefore walks 350-day windows (~7 calls per series) and keys the
+rows by date, because the chunk boundaries are inclusive on both ends and repeat a day.
+
+**Funding-interval caveat (Solana, Nov 2022).** Binance moved SOLUSDT from 8-hour to
+2-hour funding during 2022-11-09..11-19 and pinned it at the -2 percent per-print cap, so
+`bn_funding_sol` daily SUMS over that week run to -17 to -24 percent per day: 12 prints at
+the cap, not a data bug. BTC/ETH never changed interval. The chart clips the axis and labels
+the episode; never read that spike as a normal funding print.
+
+Rejected on the same probe: **Deribit SOL DVOL**. `get_volatility_index_data`
+answers for currency=SOL, but the index only published 2022-05-04 through
+2022-11-25 and then stops (any request starting after 2022-11 returns nothing).
+A dead 206-row series is not a data gap to wait out - it was not committed. For
+SOL volatility use realized vol (daily log returns, 30d annualised) or perp funding
+as the crowding read.
+
+Also not available keyless for Solana (probed 2026-11-18): active addresses /
+transactions (Artemis, TokenTerminal paywalled), validator count and staking yield
+(no free historical API), token unlocks (no free API).
+
+Weekly history is NOT stored as a chart: `strategies/sol_macro_report.py` resamples
+`solusd_daily_yahoo` to weeks that END on Sunday, so price keeps one source of truth.
 
 ## What is NOT covered (known gaps)
 
@@ -225,7 +273,7 @@ in the archive); the taker ratio has none 2021-12-30 through early May 2022.
 ## Refreshing
 
 ```bash
-bash scripts/refresh.sh          # fetch all 98 charts + engine + audit + on-chain gate
+bash scripts/refresh.sh          # fetch all 119 charts + engine + audit + on-chain gate
 bash scripts/refresh.sh --check  # status only
 ```
 

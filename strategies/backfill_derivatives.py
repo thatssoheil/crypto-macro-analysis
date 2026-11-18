@@ -3,9 +3,12 @@
 
 Sources (all keyless, verified working 2026-09-24):
   - Deribit DVOL daily closes (BTC, ETH) via public API (paginated, 1000 pts/call)
+    (SOL DVOL was tried 2026-11-18 and rejected: the index only published 2022-05-04
+     to 2022-11-25, then was discontinued - a dead series, not a data gap)
   - Binance USD-M futures daily metrics zips (data.binance.vision): open interest,
     top-trader long/short ratio, taker buy/sell volume ratio -> daily (23:45 snapshot)
   - Binance monthly fundingRate zips -> daily SUM of the 8h rates (fraction/day)
+    Symbols: BTCUSDT (2020-01), ETHUSDT (2020-01), SOLUSDT (2020-08, added 2026-11-18)
 
 Writes into data/macro_dataset/ (merge-by-date: existing rows kept, new rows win).
 Re-runnable: skips metric dates already present in the CSVs, so after the first
@@ -105,7 +108,11 @@ for cur, name in (("BTC", "dvol_btc"), ("ETH", "dvol_eth")):
 
 # ---------- 2. Binance daily metrics ----------
 print("== Binance daily metrics (OI / top-trader L-S / taker) ==", flush=True)
-for sym, start_date in (("BTCUSDT", date(2020, 9, 1)), ("ETHUSDT", date(2021, 12, 1))):
+for sym, start_date in (("BTCUSDT", date(2020, 9, 1)), ("ETHUSDT", date(2021, 12, 1)),
+                        # SOL perp opened 2020-08-11, but Binance's METRICS archive for
+                        # alts only starts 2021-12-01 (2021-11-30 is a 404, verified
+                        # 2026-11-18). Funding zips go back to 2021-01.
+                        ("SOLUSDT", date(2021, 12, 1))):
     asset = sym[:3].lower()
     charts = {suf: load_existing(f"bn_{suf}_{asset}") for suf in METRIC_COLS.values()}
     day, end = start_date, date.today()
@@ -146,7 +153,7 @@ for sym, start_date in (("BTCUSDT", date(2020, 9, 1)), ("ETHUSDT", date(2021, 12
 
 # ---------- 3. Binance monthly funding ----------
 print("== Binance monthly funding (daily sums) ==", flush=True)
-for sym in ("BTCUSDT", "ETHUSDT"):
+for sym in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
     asset = sym[:3].lower()
     name = f"bn_funding_{asset}"
     d = load_existing(name)
