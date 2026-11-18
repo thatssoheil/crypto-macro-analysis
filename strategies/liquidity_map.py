@@ -136,7 +136,11 @@ def okx_candles(hours, inst="BTC-USDT-SWAP"):
 
 def open_interest(coin="BTC"):
     """Current aggregate open interest in USD, plus the label of the source."""
+    # The edgeornot aggregator only serves the majors it was built for; asking it
+    # for an alt just burns 75s of timeouts before the OKX fallback answers.
     try:
+        if coin not in ("BTC", "ETH"):
+            raise RuntimeError("aggregator covers BTC/ETH only")
         j = _get(f"https://edgeornot.com/api/oi/{coin}?days=1")
         last = float(j["binance"][-1]) + float(j["bybit"][-1])
         if last > 0:
@@ -413,7 +417,8 @@ def calibrate(coin="BTC", cal_hours=168, tol_pct=0.5, horizon=48, top=4, step_ho
     lq = g.set_index("ts")["long_liq_usd"].astype(float)
     sq = g.set_index("ts")["short_liq_usd"].astype(float)
 
-    df = okx_candles(min(cal_hours + COHORT_DAYS * 24 + horizon + 4, 990))
+    df = okx_candles(min(cal_hours + COHORT_DAYS * 24 + horizon + 4, 990),
+                     inst=f"{coin}-USDT-SWAP")
     df = df[df.ts.isin(oi.index)].reset_index(drop=True)
     if len(df) < COHORT_DAYS * 24 + horizon + 24:
         raise RuntimeError("not enough overlapping Gate and OKX history")
@@ -565,7 +570,10 @@ def main(argv=None):
         print(f"\n   verdict: {verdict}")
         return 0
 
-    df = okx_candles(args.hours)
+    # 2026-11-18: the instrument now follows --coin. It used to be hard-coded to
+    # BTC-USDT-SWAP, so `--coin SOL` silently modelled Bitcoin shelves at Solana's
+    # open interest - the worst kind of wrong: plausible and labelled with the coin.
+    df = okx_candles(args.hours, inst=f"{args.coin}-USDT-SWAP")
     oi_usd, oi_src = open_interest(args.coin)
     profile = LEVERAGE_PROFILES[args.profile]
     grid = build_grid(df, oi_usd, profile, args.hours)
